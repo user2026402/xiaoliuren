@@ -383,6 +383,17 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
 .hh-row .h-k{flex:0 0 64px;font-size:12px;color:var(--ink-soft);letter-spacing:1px;padding-top:2px}
 .hh-row .h-v{font-size:13.5px;color:var(--ink);line-height:1.7}
 .outlook{display:flex;flex-direction:column;gap:8px}
+.hh-row .y-tag{display:inline-block;font-size:11.5px;color:var(--seal);background:var(--blush-light);padding:2px 8px;border-radius:999px;letter-spacing:1px;margin-right:6px;vertical-align:1px}
+.rl-tl{position:relative;padding:2px 0 2px 0;margin-top:2px}
+.rl-tl::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:rgba(107,142,116,.35)}
+.rl-item{display:flex;gap:12px;margin-bottom:12px}
+.rl-item:last-child{margin-bottom:0}
+.rl-dot{flex:0 0 auto;width:14px;height:14px;border-radius:50%;margin-top:4px;background:var(--paper);border:3px solid var(--seal);position:relative;z-index:1}
+.rl-body{flex:1;background:var(--sage-light);border-radius:12px;padding:10px 13px}
+.rl-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.rl-when{font-size:11.5px;color:var(--ink-soft);letter-spacing:1px}
+.rl-tag{font-size:12px;color:var(--seal);font-weight:700;letter-spacing:1px}
+.rl-txt{font-size:13px;color:var(--ink);line-height:1.65}
 @media (min-width:768px){ .hh-row .h-k{flex-basis:76px} }
 
 @media (prefers-reduced-motion:reduce){
@@ -608,6 +619,12 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
       <div class="hh-score"><span class="hh-num" id="hhScore">--</span><span class="hh-word" id="hhWord"></span></div>
       <div class="hh-rows" id="hhRows"></div>
       <div class="bazi-read" id="hhRead"></div>
+      <div class="bazi-section">
+        <div class="bazi-sec-title">关系流年 · 三年走势与今年节点</div>
+        <div class="hh-rows" id="hhYearly"></div>
+        <div class="ln-note" id="hhYearlyNote"></div>
+        <div class="rl-tl" id="hhFuture"></div>
+      </div>
     </div>
 
     <button class="again-btn" id="againBtn" type="button">再问一卦</button>
@@ -9658,7 +9675,110 @@ function renderHehun(hy,hm,hd,hh,hgender){
   $('hhWord').textContent=word;
   $('hhRows').innerHTML=rows.map(r=>'<div class="hh-row"><span class="h-k">'+r[0]+'</span><span class="h-v">'+r[1]+'</span></div>').join('');
   $('hhRead').innerHTML='<b>建议选择：</b>'+tips.join('');
+  buildHehunYearly(A,B,$('bGender').value||'男',hgender||'男');
+  buildHehunFuture(A,B);
 }
+
+// 关系流年：结合两人当前大运与未来三年流年，逐年判断走势
+function curDaYunGz(ec,gv){
+  try{
+    const yun=ec.getYun(gv,1);
+    const dayun=yun.getDaYun(8);
+    const curYear=new Date().getFullYear();
+    for(const dy of dayun){
+      const s=dy.getStartYear();
+      if(curYear>=s&&curYear<s+10) return dy.getGanZhi();
+    }
+    return '';
+  }catch(e){ return ''; }
+}
+const YY_MOOD={'正财':6,'偏财':6,'正官':6,'七杀':3,'正印':4,'偏印':3,'食神':3,'伤官':-4,'比肩':-3,'劫财':-6};
+const YY_WORD={'正财':'财星当令，感情与物质双旺','偏财':'偏财星动，缘分与机遇偏旺','正官':'官星主事，宜确定名分、见长辈','七杀':'七杀带压，关系易有取舍与担当','正印':'印星护持，安稳平顺、利见家长','偏印':'偏印照临，心思细腻、宜少猜疑','食神':'食神气畅，相处甜蜜、宜多表达','伤官':'伤官当头，口舌渐起、宜忍让','比肩':'比肩并立，各忙各的、感情平淡','劫财':'劫财暗动，防竞争与破耗'};
+function buildHehunYearly(A,B,aGender,bGender){
+  const curYear=new Date().getFullYear();
+  const gvA=aGender==='女'?0:1, gvB=bGender==='女'?0:1;
+  const dyA=curDaYunGz(A.ec,gvA), dyB=curDaYunGz(B.ec,gvB);
+  const box=$('hhYearly'); box.innerHTML='';
+  const rows=[];
+  rows.push('<div class="hh-row"><span class="h-k">当前大运</span><span class="h-v">你走「'+(dyA||'起运前')+'」 · 对方走「'+(dyB||'起运前')+'」，<span class="y-tag">大运同参</span></span></div>');
+  let bestY=curYear,bestSc=-1,hardY=-1;
+  for(let y=curYear;y<=curYear+2;y++){
+    const yl=Solar.fromYmd(y,6,15).getLunar();
+    const yGan=yl.getYearGanExact(), yZhi=yl.getYearZhiExact();
+    const ssA=LunarUtil.SHI_SHEN[A.gan+yGan], ssB=LunarUtil.SHI_SHEN[B.gan+yGan];
+    let sc=50;
+    const hit=[];
+    if(zhiHe6(yZhi,A.zhi)){ sc+=15; hit.push('与你日支六合'); }
+    else if(zhiChong(yZhi,A.zhi)){ sc-=12; hit.push('冲你日支'); }
+    else if(zhiXing(yZhi,A.zhi)){ sc-=8; hit.push('刑你日支'); }
+    if(zhiHe6(yZhi,B.zhi)){ sc+=15; hit.push('与TA日支六合'); }
+    else if(zhiChong(yZhi,B.zhi)){ sc-=12; hit.push('冲TA日支'); }
+    else if(zhiXing(yZhi,B.zhi)){ sc-=8; hit.push('刑TA日支'); }
+    if(yZhi===taoHuaZhi(A.yZhi)||yZhi===taoHuaZhi(A.zhi)){ sc+=10; hit.push('你的桃花年'); }
+    if(yZhi===taoHuaZhi(B.yZhi)||yZhi===taoHuaZhi(B.zhi)){ sc+=10; hit.push('TA的桃花年'); }
+    sc+=(YY_MOOD[ssA]||0)+(YY_MOOD[ssB]||0);
+    sc=Math.max(30,Math.min(90,sc));
+    if(sc>bestSc){ bestSc=sc; bestY=y; }
+    if(sc<50) hardY=y;
+    let tag,cls;
+    if(sc>=62){ tag='吉'; cls='y-tag'; }
+    else if(sc>=50){ tag='顺'; cls='y-tag'; }
+    else { tag='考验'; cls='y-tag'; }
+    const txt=[];
+    if(hit.length){ txt.push(hit.join('、')); }
+    if(ssA&&YY_WORD[ssA]){ txt.push('你逢'+ssA+'（'+YY_WORD[ssA].split('，')[0]+'）'); }
+    if(ssB&&YY_WORD[ssB]){ txt.push('TA逢'+ssB+'（'+YY_WORD[ssB].split('，')[0]+'）'); }
+    rows.push('<div class="hh-row"><span class="h-k">'+y+'年<br>'+yGan+yZhi+'</span><span class="h-v"><span class="'+cls+'">'+tag+'</span> '+(txt.join('；')||'流年平稳，关系顺其自然')+'</span></div>');
+  }
+  box.innerHTML=rows.join('');
+  const note=bestY===curYear?('未来三年中，「'+bestY+'年」能量最旺，是推进关系的窗口期，宜主动定情或见家长。')
+    :('未来三年中，「'+bestY+'年」最旺，值得提前布局；'+(hardY>0?('「'+hardY+'年」宜稳守，重要决定往后放，多沟通少计较。'):'整体平顺向上，顺水行舟即可。'));
+  $('hhYearlyNote').textContent=note;
+}
+
+// 今年按月节点：结合双方流年与月令，推演"更进一步 / 见面 / 暧昧 / 断联"窗口
+function buildHehunFuture(A,B){
+  const curYear=new Date().getFullYear();
+  const lunar=Solar.fromYmd(curYear,6,15).getLunar();
+  const yGan=lunar.getYearGanExact();
+  const months=monthGanzhi(yGan);
+  const tags=new Array(12).fill(null), txts=new Array(12).fill('');
+  months.forEach((gz,i)=>{
+    const mg=gz.charAt(0), mz=gz.charAt(1);
+    const ssA=LunarUtil.SHI_SHEN[A.gan+mg], ssB=LunarUtil.SHI_SHEN[B.gan+mg];
+    const he=zhiHe6(mz,A.zhi)||zhiHe6(mz,B.zhi);
+    const bad=zhiChong(mz,A.zhi)||zhiChong(mz,B.zhi)||zhiXing(mz,A.zhi)||zhiXing(mz,B.zhi);
+    const tao=(mz===taoHuaZhi(A.zhi)||mz===taoHuaZhi(A.yZhi)||mz===taoHuaZhi(B.zhi)||mz===taoHuaZhi(B.yZhi));
+    const cai=(ssA==='正财'||ssA==='偏财'||ssB==='正财'||ssB==='偏财');
+    const ss=(ssA==='食神'||ssA==='伤官'||ssB==='食神'||ssB==='伤官');
+    const guan=(ssA==='正官'||ssA==='七杀'||ssB==='正官'||ssB==='七杀');
+    const yin=(ssA==='正印'||ssA==='偏印'||ssB==='正印'||ssB==='偏印');
+    if(bad){ tags[i]='注意断联'; txts[i]='月支与日支刑冲，易有口舌冷战，宜少争对错、多留白缓冲'; }
+    else if(he){ tags[i]='更进一步'; txts[i]='月支与日支六合，黏合升温，是表白、确认关系、见家长的好窗口'; }
+    else if(tao){ tags[i]='暧昧升温'; txts[i]='桃花星临月，吸引力增强，暧昧信号与心动时刻变多'; }
+    else if(cai){ tags[i]='见面机会'; txts[i]='财星当令，主动邀约与付出增多，见面机会密集'; }
+    else if(ss){ tags[i]='互动表达'; txts[i]='食伤当令，话匣子打开，约会聊天最自然，适合拉近距离'; }
+    else if(guan){ tags[i]='关系定调'; txts[i]='官杀当令，关系面临表态或压力，宜坦诚沟通定心'; }
+    else if(yin){ tags[i]='长辈牵线'; txts[i]='印星当令，家人朋友牵线搭桥，感情平稳滋养'; }
+  });
+  // 相邻同类月合并为区间
+  const seq=[];
+  for(let i=0;i<12;i++){
+    const t=tags[i]; if(!t) continue;
+    const last=seq[seq.length-1];
+    if(last&&last.tag===t&&i===last.to+1){ last.to=i; }
+    else seq.push({tag:t,from:i,to:i});
+  }
+  if(!seq.length){ seq.push({tag:'平稳发展',from:-1,to:-1}); }
+  const box=$('hhFuture'); box.innerHTML='';
+  seq.slice(0,6).forEach(s=>{
+    const d=document.createElement('div'); d.className='rl-item';
+    const when=s.from>=0?(s.from===s.to?('农历'+MONTH_CN[s.from]+'月'):('农历'+MONTH_CN[s.from]+'~'+MONTH_CN[s.to]+'月')):'全年';
+    d.innerHTML='<div class="rl-dot"></div><div class="rl-body"><div class="rl-head"><span class="rl-when">'+when+'</span><span class="rl-tag">'+s.tag+'</span></div><div class="rl-txt">'+(s.from>=0?txts[s.from]:'关系平稳推进，无大波澜')+'</div></div>';
+    box.appendChild(d);
+  });
+}
+
 $('hehunBtn').addEventListener('click',()=>{
   const hy=parseInt($('hYear').value,10),hm=parseInt($('hMonth').value,10),hd=parseInt($('hDay').value,10);
   let hh=parseInt($('hHour').value,10);
