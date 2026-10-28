@@ -364,6 +364,27 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
 .liunian .ln-note{font-size:12.5px;color:var(--ink-soft);margin-top:6px;line-height:1.7}
 @media (min-width:768px){ .pillars{gap:14px} }
 
+/* ========== 姻缘合盘 / 本年运程 ========== */
+.hh-card{background:var(--blush-light);border-radius:14px;padding:16px;margin-top:18px}
+.hh-card .hh-title{font-family:"Noto Serif SC",serif;font-size:14.5px;color:var(--teal-deep);letter-spacing:1px;font-weight:700;margin-bottom:12px}
+.hh-btn{width:100%;margin-top:12px;background:var(--seal);color:#fff;border:none;border-radius:999px;padding:11px 0;font-size:15px;letter-spacing:2px;cursor:pointer;font-family:"Noto Sans SC",sans-serif}
+.hh-btn:hover{opacity:.9}
+.yearly-list{display:flex;flex-direction:column;gap:8px}
+.yearly-item{background:var(--sage-light);border-radius:12px;padding:11px 14px;display:flex;gap:10px;align-items:flex-start}
+.yearly-item .y-tag{flex:0 0 auto;font-size:11.5px;color:var(--seal);background:var(--blush-light);padding:3px 8px;border-radius:999px;letter-spacing:1px;margin-top:2px}
+.yearly-item .y-text{font-size:13.5px;color:var(--ink);line-height:1.7}
+.yearly-item .y-when{display:block;font-size:11px;color:var(--ink-soft);margin-top:3px;letter-spacing:1px}
+.hehun{background:var(--paper);border-radius:var(--radius);padding:22px 20px;box-shadow:var(--shadow);border:1px solid var(--sage-light)}
+.hh-score{text-align:center;padding:14px 0 8px}
+.hh-num{font-family:"Noto Serif SC",serif;font-size:clamp(40px,12vw,56px);font-weight:900;color:var(--teal-deep)}
+.hh-word{display:block;font-size:14px;color:var(--seal);letter-spacing:2px;margin-top:4px}
+.hh-rows{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.hh-row{background:var(--sage-light);border-radius:12px;padding:10px 14px;display:flex;gap:10px}
+.hh-row .h-k{flex:0 0 64px;font-size:12px;color:var(--ink-soft);letter-spacing:1px;padding-top:2px}
+.hh-row .h-v{font-size:13.5px;color:var(--ink);line-height:1.7}
+.outlook{display:flex;flex-direction:column;gap:8px}
+@media (min-width:768px){ .hh-row .h-k{flex-basis:76px} }
+
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001s !important;animation-iteration-count:1 !important}
 }
@@ -491,6 +512,29 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
         </div>
         <div class="birth-field full"><label for="bCity">常居城市（选填）</label><input id="bCity" type="text" placeholder="用于结合开运方位建议"></div>
       </div>
+      <div class="hh-card">
+        <div class="hh-title">姻缘合盘 · 与 TA 会不会在一起</div>
+        <p class="tiny">填入对方的生辰，双盘同参，看缘分深浅与相处之道。时辰、性别可留空。</p>
+        <div class="birth-grid">
+          <div class="birth-field"><label for="hYear">对方出生年</label><input id="hYear" type="number" min="1900" max="2100" placeholder="如 2005" inputmode="numeric"></div>
+          <div class="birth-field"><label for="hMonth">月份</label><select id="hMonth"></select></div>
+          <div class="birth-field"><label for="hDay">日</label><select id="hDay"></select></div>
+          <div class="birth-field"><label for="hHour">时辰（选填）</label>
+            <select id="hHour">
+              <option value="0">不确定</option><option value="1">子时（23–1点）</option><option value="2">丑时（1–3点）</option>
+              <option value="3">寅时（3–5点）</option><option value="4">卯时（5–7点）</option>
+              <option value="5">辰时（7–9点）</option><option value="6">巳时（9–11点）</option>
+              <option value="7">午时（11–13点）</option><option value="8">未时（13–15点）</option>
+              <option value="9">申时（15–17点）</option><option value="10">酉时（17–19点）</option>
+              <option value="11">戌时（19–21点）</option><option value="12">亥时（21–23点）</option>
+            </select>
+          </div>
+          <div class="birth-field"><label for="hGender">性别（选填）</label>
+            <select id="hGender"><option value="男">男</option><option value="女">女</option><option value="">暂不说明</option></select>
+          </div>
+        </div>
+        <button class="hh-btn" id="hehunBtn" type="button">合婚预测</button>
+      </div>
     </div>
 
     <button class="start-btn" id="startBtn" type="button">虔诚起卦</button>
@@ -552,6 +596,18 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
         <div class="bazi-sec-title">流年推演 · 流年大运同参</div>
         <div class="liunian" id="liunian"></div>
       </div>
+      <div class="bazi-section">
+        <div class="bazi-sec-title" id="outlookTitle">本年运程 · 大概率会发生的事</div>
+        <div class="outlook" id="outlook"></div>
+      </div>
+    </div>
+
+    <div class="hehun" id="hehun" hidden>
+      <div class="bazi-title">姻缘合盘 · 双盘同参</div>
+      <p class="bazi-sub" id="hhTag"></p>
+      <div class="hh-score"><span class="hh-num" id="hhScore">--</span><span class="hh-word" id="hhWord"></span></div>
+      <div class="hh-rows" id="hhRows"></div>
+      <div class="bazi-read" id="hhRead"></div>
     </div>
 
     <button class="again-btn" id="againBtn" type="button">再问一卦</button>
@@ -9173,11 +9229,11 @@ let category='qg';
 let manualMode=false;
 let mode='one'; // 'one' | 'birth'
 
-// 填充本命月份 / 日
+// 填充本命 / 对方月份、日
 (function(){
-  const m=$('bMonth'),d=$('bDay');
-  for(let i=1;i<=12;i++){ m.add(new Option(i+' 月',i)); }
-  for(let i=1;i<=31;i++){ d.add(new Option(i+' 日',i)); }
+  const m=$('bMonth'),d=$('bDay'),hm=$('hMonth'),hd=$('hDay');
+  for(let i=1;i<=12;i++){ m.add(new Option(i+' 月',i)); hm.add(new Option(i+' 月',i)); }
+  for(let i=1;i<=31;i++){ d.add(new Option(i+' 日',i)); hd.add(new Option(i+' 日',i)); }
 })();
 $('modeToggle').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
@@ -9449,7 +9505,170 @@ function renderBaZi(y,mo,da,ho,gv,gender,city){
   }else{
     lnBox.innerHTML='<div class="ln-note">尚在起运之前，流年随大运之始而定。</div>';
   }
+
+  // 本年运程
+  $('hehun').hidden=true;
+  buildOutlook(ec,dayGan,curYear);
 }
+
+/* ========== 本年运程 / 姻缘合盘 ========== */
+const GAN=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const ZHI=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const CHONG_PAIR=[['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
+const XING_PAIRS=[['寅','巳'],['巳','申'],['申','寅'],['丑','戌'],['戌','未'],['未','丑'],['子','卯']];
+const SHENG5={'木':'火','火':'土','土':'金','金':'水','水':'木'};
+const KE5={'木':'土','土':'水','水':'火','火':'金','金':'木'};
+const HE6MAP={'子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午'};
+function zhiHe6(a,b){ return HE6MAP[a]===b; }
+function zhiChong(a,b){ return CHONG_PAIR.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)); }
+function zhiXing(a,b){ return XING_PAIRS.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)); }
+function taoHuaZhi(z){
+  if(z==='申'||z==='子'||z==='辰') return '酉';
+  if(z==='寅'||z==='午'||z==='戌') return '卯';
+  if(z==='巳'||z==='酉'||z==='丑') return '午';
+  return '子';
+}
+// 五虎遁：年干起寅月，顺推十二个月干支
+function monthGanzhi(yearGan){
+  const gi=GAN.indexOf(yearGan);
+  const yinGan=(gi%5*2+2)%10;
+  const arr=[];
+  for(let i=0;i<12;i++){ arr.push(GAN[(yinGan+i*2)%10]+ZHI[(2+i)%12]); }
+  return arr;
+}
+function getChart(y,mo,da,ho){
+  const solar=Solar.fromYmdHms(y,mo,da,时辰起时(ho),30,0);
+  const ec=solar.getLunar().getEightChar();
+  const w={木:0,火:0,土:0,金:0,水:0};
+  [ec.getYearGan(),ec.getMonthGan(),ec.getDayGan(),ec.getTimeGan()].forEach(g=>w[LunarUtil.WU_XING_GAN[g]]++);
+  [ec.getYearZhi(),ec.getMonthZhi(),ec.getDayZhi(),ec.getTimeZhi()].forEach(z=>w[LunarUtil.WU_XING_ZHI[z]]++);
+  return {ec:ec,gan:ec.getDayGan(),zhi:ec.getDayZhi(),elm:LunarUtil.WU_XING_GAN[ec.getDayGan()],
+    yGan:ec.getYearGan(),yZhi:ec.getYearZhi(),wx:w,nayin:ec.getDayNaYin()};
+}
+const MONTH_CN=['一','二','三','四','五','六','七','八','九','十','冬','腊'];
+const MONTH_ZHI_NAME=['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'];
+function mStr(idxs){ return idxs.length?idxs.map(i=>'农历'+MONTH_CN[i]+'月（'+MONTH_ZHI_NAME[i]+'月）').join('、'):'—'; }
+
+// 本年运程：大概率会发生的事 + 大致时间
+function buildOutlook(ec,dayGan,curYear){
+  const lunar=Solar.fromYmd(curYear,6,15).getLunar();
+  const yGan=lunar.getYearGanExact(), yZhi=lunar.getYearZhiExact();
+  const ySs=LunarUtil.SHI_SHEN[dayGan+yGan];
+  const dayZhi=ec.getDayZhi();
+  const months=monthGanzhi(yGan);
+  const box=$('outlook'); box.innerHTML='';
+  const items=[]; const push=(tag,idxs,text)=>items.push({tag:tag,when:idxs,text:text});
+  const money=[],work=[],study=[],talk=[],love=[],move=[];
+  const t1=taoHuaZhi(dayZhi), t2=taoHuaZhi(ec.getYearZhi());
+  months.forEach((gz,i)=>{
+    const mg=gz.charAt(0), mz=gz.charAt(1);
+    const ss=LunarUtil.SHI_SHEN[dayGan+mg];
+    if(ss==='正财'||ss==='偏财') money.push(i);
+    if(ss==='正官'||ss==='七杀') work.push(i);
+    if(ss==='正印'||ss==='偏印') study.push(i);
+    if(ss==='食神'||ss==='伤官') talk.push(i);
+    if(mz===t1||mz===t2) love.push(i);
+    if(zhiChong(mz,dayZhi)||zhiXing(mz,dayZhi)) move.push(i);
+  });
+  const fl=(list,tag,text)=>list.length?push(tag,mStr(list),text):null;
+  fl(money,'财运',(ySs==='正财'||ySs==='偏财'?'流年逢财，':'')+'财星当令之月，利于谈成合作、进账回款，宜主动经营。');
+  fl(work,'事业',(ySs==='正官'||ySs==='七杀'?'流年官杀主事，':'')+'事业上或见任命、晋升、跳槽等关键节点，压力与机会并存。');
+  fl(study,'学业文书',(ySs==='正印'||ySs==='偏印'?'流年印星照临，':'')+'利于考试、进修、签约文书，宜静心沉淀，把握贵人提携。');
+  fl(talk,'表达与机遇','食伤当令之月，才思活跃，利于表达展示、创意破局，单身者异性缘亦佳。');
+  fl(love,'感情桃花','桃花星临月，异性缘分与暧昧信号增多，宜主动示好、把握窗口。');
+  fl(move,'变动与注意','此月地支与日支刑冲，易有行程变动、健康小扰或人际摩擦，宜缓行稳进。');
+  if(!items.length){ items.push({tag:'平顺',when:'全年',text:'流年较平，按月顺势而为即可。'}); }
+  items.forEach(it=>{
+    const d=document.createElement('div'); d.className='yearly-item';
+    d.innerHTML='<span class="y-tag">'+it.tag+'</span><span class="y-text">'+it.text+'<span class="y-when">大致时间：'+it.when+'</span></span>';
+    box.appendChild(d);
+  });
+}
+
+// 姻缘合盘：双盘合婚
+function renderHehun(hy,hm,hd,hh,hgender){
+  const A=getChart(parseInt($('bYear').value,10),parseInt($('bMonth').value,10),parseInt($('bDay').value,10),parseInt($('bHour').value,10)||7);
+  const B=getChart(hy,hm,hd,hh);
+  const rows=[]; let score=62;
+  // 日主五行关系
+  let rel;
+  if(A.elm===B.elm){ rel='比和 · 日主五行同为「'+A.elm+'」，同气相应'; score+=5; }
+  else if(SHENG5[A.elm]===B.elm){ rel=A.elm+'生'+B.elm+' · 你滋养对方，付出较多也更包容'; score+=8; }
+  else if(SHENG5[B.elm]===A.elm){ rel=B.elm+'生'+A.elm+' · 对方滋养你，缘分自带加持'; score+=12; }
+  else if(KE5[A.elm]===B.elm){ rel=A.elm+'克'+B.elm+' · 你略强势，需收锋芒'; score-=6; }
+  else { rel=B.elm+'克'+A.elm+' · 对方略强势，你宜柔韧应对'; score-=6; }
+  rows.push(['五行基调',rel]);
+  // 日支（婚姻宫）
+  if(zhiHe6(A.zhi,B.zhi)){ rows.push(['婚姻宫','日支「'+A.zhi+'—'+B.zhi+'」六合，缘分亲厚，相处默契']); score+=15; }
+  else if(zhiChong(A.zhi,B.zhi)){ rows.push(['婚姻宫','日支「'+A.zhi+'—'+B.zhi+'」相冲，性情反差大，需磨合包容']); score-=14; }
+  else if(zhiXing(A.zhi,B.zhi)){ rows.push(['婚姻宫','日支「'+A.zhi+'—'+B.zhi+'」相刑，易有口舌误会，宜多沟通']); score-=8; }
+  else { rows.push(['婚姻宫','日支「'+A.zhi+'—'+B.zhi+'」平和，相处平稳少波折']); score+=2; }
+  // 日干五合
+  if(LunarUtil.HE_GAN_5[GAN.indexOf(A.gan)]===B.gan){ rows.push(['天干之合','日干「'+A.gan+'—'+B.gan+'」相合，彼此天然有吸引力']); score+=12; }
+  else { rows.push(['天干之合','日干「'+A.gan+'—'+B.gan+'」无合，个性独立，吸引力靠相处慢慢培养']); }
+  // 桃花
+  if(B.zhi===taoHuaZhi(A.yZhi)||B.zhi===taoHuaZhi(A.zhi)){ rows.push(['桃花','对方的日支正是你的桃花星「'+B.zhi+'」，来电快，主动即有戏']); score+=8; }
+  else if(A.zhi===taoHuaZhi(B.yZhi)||A.zhi===taoHuaZhi(B.zhi)){ rows.push(['桃花','你的日支是对方的桃花星「'+A.zhi+'」，对方对你颇有好感']); score+=6; }
+  else { rows.push(['桃花','双方桃花互不照临，吸引力靠相处慢慢发酵']); }
+  // 五行互补
+  const lackA=WUXING.filter(x=>A.wx[x]===0);
+  const bSupply=lackA.filter(x=>B.wx[x]>0);
+  if(bSupply.length){ rows.push(['五行互补','你八字所缺「'+bSupply.join('、')+'」对方恰能补上，相处可互相成就']); score+=10; }
+  else if(lackA.length){ rows.push(['五行互补','你八字所缺「'+lackA.join('、')+'」对方未及补上，彼此需各自成长']); }
+  else { rows.push(['五行互补','双方五行分布均衡，各自成器，互不拖累']); }
+  // 年柱
+  if(zhiHe6(A.yZhi,B.yZhi)){ rows.push(['年柱','双方年支「'+A.yZhi+'—'+B.yZhi+'」六合，长辈与家庭层面顺']); score+=6; }
+  else if(zhiChong(A.yZhi,B.yZhi)){ rows.push(['年柱','双方年支「'+A.yZhi+'—'+B.yZhi+'」相冲，家庭观念差异较大']); score-=5; }
+  else { rows.push(['年柱','双方年支「'+A.yZhi+'—'+B.yZhi+'」不相冲，家庭层面无大碍']); }
+  // 纳音
+  const nyA=A.nayin, nyB=B.nayin;
+  if(nyA===nyB){ rows.push(['纳音','日柱纳音同为「'+nyA+'」，频率相近']); score+=4; }
+  else { rows.push(['纳音','日柱纳音「'+nyA+'」对「'+nyB+'」，五行有生有克，各有长短']); }
+
+  score=Math.max(38,Math.min(98,Math.round(score)));
+  let word;
+  if(score>=85){ word='缘分深厚 · 在一起的可能性很大'; }
+  else if(score>=70){ word='缘分不错 · 值得双向奔赴'; }
+  else if(score>=55){ word='有缘但有考验 · 用心可成'; }
+  else { word='缘分较浅 · 顺其自然为上'; }
+
+  // 最佳时机（对方桃花 / 财星月）
+  const curYear=new Date().getFullYear();
+  const months=monthGanzhi(Solar.fromYmd(curYear,6,15).getLunar().getYearGanExact());
+  let bestIdx=-1;
+  months.forEach((gz,i)=>{
+    const ss=LunarUtil.SHI_SHEN[B.gan+gz.charAt(0)];
+    if(bestIdx<0&&(gz.charAt(1)===taoHuaZhi(B.zhi)||ss==='正财'||ss==='偏财')) bestIdx=i;
+  });
+  const bestTxt=bestIdx>=0?('农历'+MONTH_CN[bestIdx]+'月（'+MONTH_ZHI_NAME[bestIdx]+'月）'):'桃花当令之月';
+
+  const tips=[];
+  if(score>=70){ tips.push('你俩气场相投，建议选在「'+bestTxt+'」前后主动推进，表白与定情更顺。'); }
+  if(B.zhi===taoHuaZhi(A.zhi)){ tips.push('你对对方有天然吸引，主动一些，成功率更高。'); }
+  if(zhiChong(A.zhi,B.zhi)){ tips.push('相处宜互相让渡空间，争执时先冷处理再谈，别急着争对错。'); }
+  if(bSupply.length){ tips.push('你缺的五行对方能补，遇事多借对方视角，运势互补。'); }
+  tips.push('命理只言趋势，真心与行动才是决定性的「选择」。');
+
+  $('bazi').hidden=true; $('hehun').hidden=false;
+  $('numCards').hidden=true; $('wheelBox').hidden=true;
+  $('verdict').hidden=true; $('reading').hidden=true; $('luck').hidden=true;
+  $('againBtn').textContent='再看一遍';
+  $('hhTag').textContent='你的日柱「'+A.gan+A.zhi+'」 × 对方日柱「'+B.gan+B.zhi+'」 · '+(hgender||'性别未明');
+  $('hhScore').textContent=score;
+  $('hhWord').textContent=word;
+  $('hhRows').innerHTML=rows.map(r=>'<div class="hh-row"><span class="h-k">'+r[0]+'</span><span class="h-v">'+r[1]+'</span></div>').join('');
+  $('hhRead').innerHTML='<b>建议选择：</b>'+tips.join('');
+}
+$('hehunBtn').addEventListener('click',()=>{
+  const hy=parseInt($('hYear').value,10),hm=parseInt($('hMonth').value,10),hd=parseInt($('hDay').value,10);
+  let hh=parseInt($('hHour').value,10);
+  const hgender=$('hGender').value||'暂不说明';
+  if(!hy||hy<1900||hy>2100||!hm||!hd){ alert('请补全对方出生年月日'); return; }
+  if(hh===0){ hh=1+Math.floor(Math.random()*12); }
+  $('ritual').hidden=true; $('result').hidden=true; $('casting').hidden=false;
+  const stage=$('castStage'); stage.innerHTML='双盘同参 · 红线牵定<span class="dot"></span>';
+  setTimeout(()=>{ $('casting').hidden=true; $('result').hidden=false; renderHehun(hy,hm,hd,hh,hgender); window.scrollTo({top:0,behavior:'smooth'}); },1700);
+});
 
 /* ========== 掌诀科普渲染 ========== */
 const grid=$('palmGrid');
