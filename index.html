@@ -370,6 +370,55 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
 @keyframes earR{0%,100%{transform:rotate(0)}50%{transform:rotate(13deg)}}
 @keyframes bigHop{0%{transform:translateY(0)}35%{transform:translateY(-26px) rotate(7deg)}70%{transform:translateY(0) rotate(-3deg)}100%{transform:translateY(0)}}
 
+/* ========== 许愿小苹果 ========== */
+.apple-wrap{
+  position:fixed;left:16px;bottom:14px;width:clamp(50px,8vw,64px);z-index:6;
+  cursor:pointer;animation:appleFloat 3.5s ease-in-out infinite;
+}
+.apple-wrap svg{display:block;width:100%;height:auto}
+.apple-body{animation:appleBreathe 2.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
+.apple-wrap.shake{animation:appleShake .6s ease-in-out}
+.apple-shadow{
+  position:absolute;left:15%;right:15%;bottom:-2px;height:6px;border-radius:50%;
+  background:rgba(178,88,74,.2);animation:appleShadow 3.5s ease-in-out infinite;
+}
+@keyframes appleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes appleBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes appleShadow{0%,100%{transform:scaleX(1);opacity:.2}50%{transform:scaleX(.8);opacity:.15}}
+@keyframes appleShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(6deg)}}
+/* 爱心飘出 */
+.heart{
+  position:fixed;z-index:10;pointer-events:none;
+  font-size:16px;animation:heartFloat 1.5s ease-out forwards;
+}
+@keyframes heartFloat{
+  0%{opacity:1;transform:translateY(0) scale(.5)}
+  100%{opacity:0;transform:translateY(-80px) scale(1.2)}
+}
+/* 许愿弹窗 */
+.wish-modal{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;
+  background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;
+}
+.wish-box{
+  background:#fff;border-radius:20px;padding:24px;width:90%;max-width:340px;
+  box-shadow:0 12px 40px rgba(0,0,0,.15);text-align:center;
+}
+.wish-box h3{font-family:"Noto Serif SC",serif;color:var(--teal-deep);margin:0 0 12px;font-size:18px}
+.wish-box textarea{
+  width:100%;height:80px;border:2px solid var(--sage-light);border-radius:12px;
+  padding:10px;font-size:14px;resize:none;box-sizing:border-box;
+  font-family:inherit;outline:none;
+}
+.wish-box textarea:focus{border-color:var(--sage)}
+.wish-box button{
+  margin-top:12px;padding:10px 28px;border:none;border-radius:20px;
+  background:linear-gradient(135deg,#F6B8C5,#F8D4A8);color:#fff;font-size:14px;
+  cursor:pointer;font-family:inherit;font-weight:600;
+}
+.wish-box button:hover{opacity:.9}
+.wish-success{color:var(--sage);font-size:14px;line-height:1.6;margin-top:8px}
+
 /* ========== 八字命盘 ========== */
 .bazi{background:var(--paper);border-radius:var(--radius);padding:22px 20px;box-shadow:var(--shadow);border:1px solid var(--sage-light)}
 .bazi .bazi-title{font-family:"Noto Serif SC",serif;font-size:17px;color:var(--teal-deep);letter-spacing:2px;text-align:center;font-weight:800}
@@ -518,6 +567,43 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
       <rect x="59" y="78" width="5" height="12" rx="2" fill="#FCE8EC"/>
     </g>
   </svg>
+</div>
+
+<!-- ===== 许愿小苹果 ===== -->
+<div class="apple-wrap" id="apple" role="img" aria-label="许愿小苹果" title="点我许愿">
+  <span class="apple-shadow" aria-hidden="true"></span>
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g class="apple-body">
+      <!-- 叶子 -->
+      <ellipse cx="58" cy="22" rx="10" ry="5" fill="#9CC4A8" transform="rotate(-25 58 22)"/>
+      <!-- 果柄 -->
+      <rect x="48" y="16" width="3" height="12" rx="1.5" fill="#8B6F47"/>
+      <!-- 苹果主体 -->
+      <circle cx="42" cy="55" r="22" fill="#F8A5B0"/>
+      <circle cx="58" cy="55" r="22" fill="#F8A5B0"/>
+      <ellipse cx="50" cy="62" rx="24" ry="20" fill="#F8A5B0"/>
+      <!-- 高光 -->
+      <ellipse cx="38" cy="48" rx="6" ry="8" fill="#fff" opacity=".4"/>
+      <!-- 眼睛 -->
+      <circle cx="43" cy="56" r="2.5" fill="#41483E"/>
+      <circle cx="57" cy="56" r="2.5" fill="#41483E"/>
+      <!-- 腮红 -->
+      <circle cx="38" cy="62" r="3" fill="#F6B8C5" opacity=".6"/>
+      <circle cx="62" cy="62" r="3" fill="#F6B8C5" opacity=".6"/>
+      <!-- 嘴巴 -->
+      <path d="M46 64 q4 3 8 0" stroke="#41483E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </g>
+  </svg>
+</div>
+
+<!-- 许愿弹窗 -->
+<div class="wish-modal" id="wishModal" style="display:none">
+  <div class="wish-box">
+    <h3>许下你的愿望</h3>
+    <textarea id="wishText" placeholder="写下你的愿望，小苹果会帮你带走..." maxlength="100"></textarea>
+    <button id="wishBtn">许愿</button>
+    <div class="wish-success" id="wishSuccess" style="display:none"></div>
+  </div>
 </div>
 
 <div class="wrap">
@@ -10620,6 +10706,65 @@ makeDraggable($('bunny'),function(el){
 makeDraggable($('sheep'),function(el){
   el.style.transform='scale(1.15)';
   setTimeout(()=>el.style.transform='',300);
+});
+
+// 许愿小苹果
+const apple=$('apple');
+const wishModal=$('wishModal');
+const wishText=$('wishText');
+const wishBtn=$('wishBtn');
+const wishSuccess=$('wishSuccess');
+
+apple.addEventListener('click',function(){
+  // 苹果晃动
+  apple.classList.remove('shake');
+  void apple.offsetWidth;
+  apple.classList.add('shake');
+  // 飘出爱心
+  const rect=apple.getBoundingClientRect();
+  for(let i=0;i<5;i++){
+    setTimeout(()=>{
+      const heart=document.createElement('div');
+      heart.className='heart';
+      heart.textContent=['❤️','✨','🌟','💫','💕'][i];
+      heart.style.left=(rect.left+rect.width/2-10+Math.random()*20-10)+'px';
+      heart.style.top=(rect.top+10)+'px';
+      document.body.appendChild(heart);
+      setTimeout(()=>heart.remove(),1500);
+    },i*150);
+  }
+  // 弹出许愿框
+  setTimeout(()=>{
+    wishModal.style.display='flex';
+    wishSuccess.style.display='none';
+    wishText.value='';
+    wishText.focus();
+  },400);
+});
+
+wishBtn.addEventListener('click',function(){
+  const wish=wishText.value.trim();
+  if(!wish){
+    wishText.placeholder='先写点什么再许愿呀~';
+    return;
+  }
+  wishSuccess.innerHTML='愿望已被小苹果带走啦 ✨<br>心诚则灵，慢慢来~';
+  wishSuccess.style.display='block';
+  wishText.style.display='none';
+  wishBtn.style.display='none';
+  setTimeout(()=>{
+    wishModal.style.display='none';
+    wishText.style.display='';
+    wishBtn.style.display='';
+  },2000);
+});
+
+wishModal.addEventListener('click',function(e){
+  if(e.target===wishModal){
+    wishModal.style.display='none';
+    wishText.style.display='';
+    wishBtn.style.display='';
+  }
 });
 </script>
 </body>
