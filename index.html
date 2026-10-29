@@ -10027,7 +10027,9 @@ $('startBtn').addEventListener('click',async ()=>{
   // ---- 一事起卦（小六壬）----
   // 自动从问题判断分类（用户手动选的 chip 优先）
   const qText=($('question').value||'').trim();
-  const autoCat=classifyQuestion(qText);
+  // 把新的问题类型映射回旧的分类体系
+  const qtMap={love_feeling:'qg',love_together:'qg',love:'qg',job:'sy',career:'sy',exam:'xy',study:'xy',money:'cy',health:'jk',travel:'cx',baby:'qt',what_happen:'qt',other:'qt'};
+  const autoCat=qtMap[detectQuestionType(qText)]||'qt';
   if(autoCat && !manualMode){
     category=autoCat;
     // 同步 UI 上的 chip 选中态
