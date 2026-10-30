@@ -178,37 +178,37 @@ textarea:focus{outline:none;border-color:var(--sage)}
 /* ========== 塔罗牌选牌 ========== */
 .tarot-deck {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
   margin: 20px 0;
 }
 .tarot-card-back {
   aspect-ratio: 2/3;
   background: linear-gradient(135deg, #f8b4c8 0%, #e89bb4 100%);
-  border-radius: 6px;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 8px rgba(232, 155, 180, 0.3);
+  border-radius: 4px;
+  border: 1.5px solid #fff;
+  box-shadow: 0 2px 6px rgba(232, 155, 180, 0.3);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 12px;
   color: #fff;
   transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
 }
 .tarot-card-back:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(232, 155, 180, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(232, 155, 180, 0.4);
 }
 .tarot-card-back.selected {
-  transform: translateY(-6px) scale(1.05);
-  box-shadow: 0 10px 20px rgba(232, 155, 180, 0.5);
+  transform: translateY(-4px) scale(1.1);
+  box-shadow: 0 8px 16px rgba(232, 155, 180, 0.5);
   border-color: #d47a9a;
 }
 .tarot-card-back::after {
   content: '✦';
-  font-size: 14px;
+  font-size: 10px;
   opacity: 0.6;
 }
 .tarot-picked-info {
@@ -10496,10 +10496,10 @@ $('startBtn').addEventListener('click',async ()=>{
     $('rText').innerHTML='';
     // 洗牌动画2秒后显示牌背
     setTimeout(()=>{
-      // 显示牌背让用户选（22张大阿卡纳）
-      const deckHtml='<div class="tarot-picked-info">默念你的问题，凭直觉选'+n+'张牌</div>'+
+      // 显示牌背让用户选（完整78张韦特牌）
+      const deckHtml='<div class="tarot-picked-info">默念你的问题，凭直觉选'+n+'张牌（完整78张牌堆）</div>'+
         '<div class="tarot-deck" id="tarotDeck">'+
-        Array.from({length:22},(_,i)=>'<div class="tarot-card-back" data-idx="'+i+'"></div>').join('')+
+        Array.from({length:78},(_,i)=>'<div class="tarot-card-back" data-idx="'+i+'"></div>').join('')+
         '</div>';
       $('vMeta').innerHTML=deckHtml;
       // 记录选了几张
