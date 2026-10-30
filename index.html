@@ -629,6 +629,7 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
       <button class="on" data-mode="one" type="button">一事起卦</button>
       <button data-mode="liuyao" type="button">六爻</button>
       <button data-mode="qimen" type="button">奇门遁甲</button>
+      <button data-mode="tarot" type="button">塔罗牌</button>
       <button data-mode="dice" type="button">占星骰子</button>
     </div>
 
@@ -711,6 +712,23 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
         <input id="qmQuestion" type="text" placeholder="你想问什么？比如：我该不该跳槽？" style="width:100%;padding:12px;border:1px solid var(--sage);border-radius:12px;font-size:14px;box-sizing:border-box">
       </div>
       <p class="tiny">奇门遁甲按当前时间自动起局，不需要手动输入。</p>
+    </div>
+
+    <!-- ===== 塔罗牌 ===== -->
+    <div id="tarotForm" hidden>
+      <div class="ritual-note">
+        <p class="ask-label">塔罗牌 · 韦特体系</p>
+        <p class="tiny">心诚则灵，默念你的问题，然后抽牌。</p>
+      </div>
+      <div style="margin:16px 0">
+        <input id="tarotQuestion" type="text" placeholder="你想问什么？比如：他对我什么感觉？" style="width:100%;padding:12px;border:1px solid var(--sage);border-radius:12px;font-size:14px;box-sizing:border-box">
+      </div>
+      <div class="chips" id="tarotSpreadChips" style="margin-bottom:16px">
+        <button type="button" class="chip on" data-spread="1">单张 · 快速指引</button>
+        <button type="button" class="chip" data-spread="3">三张 · 过去现在未来</button>
+        <button type="button" class="chip" data-spread="5">五张 · 关系/事业深度</button>
+      </div>
+      <p class="tiny">选好牌阵后，点"抽牌"开始。</p>
     </div>
 
     <!-- ===== 占星骰子 ===== -->
@@ -9602,6 +9620,143 @@ const DICE_HOUSES=[
   {num:11,mean:'朋友、群体、愿望——这件事跟朋友、圈子、你的愿望有关'},
   {num:12,mean:'潜意识、隐秘、结束——这件事跟藏着的东西、收尾、潜意识有关'}
 ];
+/* ========== 塔罗牌抽牌与解牌 ========== */
+// 22张大阿卡纳 + 56张小阿卡纳（简化版：只列名称和基本牌意）
+const TAROT_MAJOR=[
+  {name:'愚者',mean:'新开始、冒险、天真——你正要踏上一段新旅程，别想太多，先走出去再说'},
+  {name:'魔术师',mean:'行动力、创造力——你有能力把想法变成现实，现在就是好时机'},
+  {name:'女祭司',mean:'直觉、潜意识——答案在你心里，别光听别人的，相信自己的直觉'},
+  {name:'皇后',mean:'丰饶、母性——感情上很滋润，物质上也不错，适合享受生活'},
+  {name:'皇帝',mean:'权威、秩序——需要理性控制，别太情绪化，按规矩来'},
+  {name:'教皇',mean:'传统、指引——会有长辈或老师给你帮助，按传统方法走'},
+  {name:'恋人',mean:'选择、爱情——面临选择，或者感情有进展，要忠于自己的心'},
+  {name:'战车',mean:'胜利、意志力——只要坚持就能赢，别犹豫，冲就完了'},
+  {name:'力量',mean:'勇气、耐心——用温柔的方式解决问题，别硬来'},
+  {name:'隐士',mean:'独处、内省——需要独处思考，别着急做决定，先想清楚'},
+  {name:'命运之轮',mean:'转折、变化——运势要变了，好坏都有可能，顺其自然'},
+  {name:'正义',mean:'公平、因果——种什么因得什么果，该来的总会来'},
+  {name:'倒吊人',mean:'等待、换个角度——现在不是动的时候，换个角度看问题'},
+  {name:'死神',mean:'结束、转变——旧的不去新的不来，该结束的就让它结束'},
+  {name:'节制',mean:'平衡、调和——找到平衡点，别太极端，慢慢来'},
+  {name:'恶魔',mean:'欲望、束缚——你被什么东西困住了，可能是感情、习惯或物质'},
+  {name:'高塔',mean:'突变、破坏——突然的变化会打破现状，虽然突然但未必是坏事'},
+  {name:'星星',mean:'希望、梦想——有希望，别放弃，你的梦想会实现的'},
+  {name:'月亮',mean:'迷茫、幻觉——现在看不清楚，别被表象迷惑，等清醒了再说'},
+  {name:'太阳',mean:'成功、快乐——一切都好，光明灿烂，放心去做'},
+  {name:'审判',mean:'觉醒、复活——你该醒悟了，过去的事情该有个了断了'},
+  {name:'世界',mean:'完成、圆满——这件事要成了，圆满结束，可以进入下一段了'}
+];
+const TAROT_MINOR=[
+  {suit:'权杖',name:'权杖Ace',mean:'新机会、热情——新的开始，充满热情'},
+  {suit:'权杖',name:'权杖二',mean:'计划、选择——在规划未来，面临选择'},
+  {suit:'权杖',name:'权杖三',mean:'展望、等待——已经出发了，在等结果'},
+  {suit:'权杖',name:'权杖四',mean:'稳定、庆祝——稳定下来了，值得庆祝'},
+  {suit:'权杖',name:'权杖五',mean:'冲突、竞争——有冲突或竞争，别硬碰硬'},
+  {suit:'权杖',name:'权杖六',mean:'胜利、认可——你赢了，会得到认可'},
+  {suit:'权杖',name:'权杖七',mean:'防御、坚持——有人挑战你，坚持住'},
+  {suit:'权杖',name:'权杖八',mean:'迅速、消息——消息很快就来，事情进展快'},
+  {suit:'权杖',name:'权杖九',mean:'坚韧、防备——你已经很努力了，再坚持一下'},
+  {suit:'权杖',name:'权杖十',mean:'负担、压力——你扛太多了，该放下一些'},
+  {suit:'权杖',name:'权杖侍从',mean:'好奇、热情——新的想法或机会，充满好奇'},
+  {suit:'权杖',name:'权杖骑士',mean:'行动、冲动——行动力强，但容易冲动'},
+  {suit:'权杖',name:'权杖国王',mean:'领导、权威——有领导力，适合主导'},
+  {suit:'圣杯',name:'圣杯Ace',mean:'新感情、新关系——新的感情开始了'},
+  {suit:'圣杯',name:'圣杯二',mean:'合作、相爱——两个人互相喜欢，关系好'},
+  {suit:'圣杯',name:'圣杯三',mean:'聚会、庆祝——和朋友聚会，开心'},
+  {suit:'圣杯',name:'圣杯四',mean:'不满、冷淡——对现状不满，提不起劲'},
+  {suit:'圣杯',name:'圣杯五',mean:'失落、悲伤——失去了什么，别只看失去的'},
+  {suit:'圣杯',name:'圣杯六',mean:'回忆、童年——想起过去，或者遇到旧人'},
+  {suit:'圣杯',name:'圣杯七',mean:'幻想、选择——选择太多，别想太美'},
+  {suit:'圣杯',name:'圣杯八',mean:'离开、寻找——离开现状，去寻找更好的'},
+  {suit:'圣杯',name:'圣杯九',mean:'满足、愿望——愿望快实现了，很满足'},
+  {suit:'圣杯',name:'圣杯十',mean:'幸福、圆满——感情上很圆满，幸福'},
+  {suit:'圣杯',name:'圣杯侍从',mean:'敏感、直觉——感情细腻，相信直觉'},
+  {suit:'圣杯',name:'圣杯骑士',mean:'浪漫、理想——浪漫，追求理想的爱情'},
+  {suit:'圣杯',name:'圣杯国王',mean:'温柔、成熟——成熟稳重，感情丰富'},
+  {suit:'宝剑',name:'宝剑Ace',mean:'新想法、真相——新的思路，看清真相'},
+  {suit:'宝剑',name:'宝剑二',mean:'犹豫、回避——两难选择，别逃避'},
+  {suit:'宝剑',name:'宝剑三',mean:'伤心、痛苦——伤心难过，别太压抑'},
+  {suit:'宝剑',name:'宝剑四',mean:'休息、恢复——需要休息，别硬撑'},
+  {suit:'宝剑',name:'宝剑五',mean:'冲突、输赢——有冲突，赢了也没好处'},
+  {suit:'宝剑',name:'宝剑六',mean:'过渡、平静——慢慢恢复，走向平静'},
+  {suit:'宝剑',name:'宝剑七',mean:'策略、欺骗——用点小手段，或者被人骗'},
+  {suit:'宝剑',name:'宝剑八',mean:'束缚、迷茫——被想法困住了，别钻牛角尖'},
+  {suit:'宝剑',name:'宝剑九',mean:'焦虑、噩梦——别太焦虑，没那么糟'},
+  {suit:'宝剑',name:'宝剑十',mean:'结束、谷底——已经到谷底了，该反弹了'},
+  {suit:'宝剑',name:'宝剑侍从',mean:'好奇、沟通——善于沟通，好奇'},
+  {suit:'宝剑',name:'宝剑骑士',mean:'直接、冲动——说话直接，有点冲动'},
+  {suit:'宝剑',name:'宝剑国王',mean:'理性、公正——理性，讲道理'},
+  {suit:'星币',name:'星币Ace',mean:'新机会、物质——新的物质机会'},
+  {suit:'星币',name:'星币二',mean:'平衡、灵活——需要平衡，灵活应对'},
+  {suit:'星币',name:'星币三',mean:'合作、学习——和别人合作，学习'},
+  {suit:'星币',name:'星币四',mean:'稳定、吝啬——稳定，但别太抠'},
+  {suit:'星币',name:'星币五',mean:'困难、贫穷——有点困难，但会过去的'},
+  {suit:'星币',name:'星币六',mean:'给予、收获——有人帮你，或者你帮别人'},
+  {suit:'星币',name:'星币七',mean:'等待、收获——种下去的东西要结果了'},
+  {suit:'星币',name:'星币八',mean:'努力、专注——努力工作，专注'},
+  {suit:'星币',name:'星币九',mean:'独立、富足——独立，物质上不错'},
+  {suit:'星币',name:'星币十',mean:'圆满、传承——物质上圆满，家庭好'},
+  {suit:'星币',name:'星币侍从',mean:'学习、踏实——踏实学习，积累'},
+  {suit:'星币',name:'星币骑士',mean:'稳重、踏实——稳重踏实，一步一步来'},
+  {suit:'星币',name:'星币国王',mean:'富足、成功——物质上成功，成熟'}
+];
+// 抽牌
+function drawTarot(n){
+  const all=[...TAROT_MAJOR.map(t=>({...t,type:'大阿卡纳'})),...TAROT_MINOR.map(t=>({...t,type:'小阿卡纳'}))];
+  // 无放回抽n张
+  const shuffled=all.sort(()=>Math.random()-0.5);
+  const picked=shuffled.slice(0,n).map(card=>({...card, reversed:Math.random()<0.5}));
+  return picked;
+}
+// 解牌
+function readTarot(cards,spread,q){
+  let txt='';
+  const positions={
+    '1':['指引'],
+    '3':['过去','现在','未来'],
+    '5':['现状','阻碍','建议','结果','环境']
+  };
+  const posNames=positions[spread]||['指引'];
+  txt+='你抽了'+cards.length+'张牌，牌阵是「'+posNames.join('、')+'」。\n\n';
+  // 逐张解读
+  cards.forEach((card,i)=>{
+    txt+='【'+posNames[i]+'】'+card.name+(card.reversed?'（逆位）':'（正位）')+'\n';
+    if(card.reversed){
+      txt+='逆位的意思是：这张牌的能量有点卡住了，或者反过来。'+card.mean+'，但现在是逆位，说明'+card.mean.split('——')[1]+'这方面有点不太顺，或者有点过度了。\n\n';
+    }else{
+      txt+=card.mean+'。\n\n';
+    }
+  });
+  // 整体判断
+  txt+='---\n\n';
+  txt+='整体来看：';
+  // 大阿卡纳占比
+  const majorCount=cards.filter(c=>c.type==='大阿卡纳').length;
+  if(majorCount>=2) txt+='大阿卡纳占比高，说明这件事是命中注定的大事情，不是小打小闹。';
+  else txt+='主要是小阿卡纳，说明这件事更多是日常琐事，不是什么大转折。';
+  txt+='\n\n';
+  // 根据问题类型
+  if(q.includes('爱')||q.includes('情')||q.includes('他')||q.includes('她')||q.includes('对象')){
+    txt+='你问的是感情：';
+    const loveCards=cards.filter(c=>c.name.includes('恋人')||c.name.includes('圣杯')||c.name.includes('皇后')||c.name.includes('太阳'));
+    if(loveCards.length>=2) txt+='感情运不错，有爱的能量，能成。';
+    else txt+='感情运一般，需要慢慢培养。';
+  }else if(q.includes('钱')||q.includes('财')||q.includes('工作')||q.includes('事业')){
+    txt+='你问的是事业/财运：';
+    const moneyCards=cards.filter(c=>c.name.includes('星币')||c.name.includes('皇帝')||c.name.includes('世界')||c.name.includes('太阳'));
+    if(moneyCards.length>=2) txt+='事业财运不错，有物质收获。';
+    else txt+='事业财运一般，慢慢来。';
+  }else{
+    txt+='你问的是「'+q+'」：';
+    const goodCards=cards.filter(c=>!c.reversed && (c.name.includes('太阳')||c.name.includes('世界')||c.name.includes('命运之轮')||c.name.includes('星星')));
+    if(goodCards.length>=2) txt+='整体是好的，放心去做。';
+    else txt+='整体一般，需要多努力。';
+  }
+  txt+='\n\n';
+  txt+='塔罗给你的建议：别想太多，跟着感觉走。牌面只是给你个方向，最终怎么做还是看你自己。';
+  return txt;
+}
+
 /* ========== 六爻排盘与解卦 ========== */
 // 八卦：从下往上三爻，1=阳,0=阴
 const BAGUA={
@@ -10048,8 +10203,9 @@ $('modeToggle').addEventListener('click',e=>{
   $('oneForm').hidden=(mode!=='one');
   $('liuyaoForm').hidden=(mode!=='liuyao');
   $('qimenForm').hidden=(mode!=='qimen');
+  $('tarotForm').hidden=(mode!=='tarot');
   $('diceForm').hidden=(mode!=='dice');
-  $('startBtn').textContent=(mode==='liuyao')?'摇卦解卦':(mode==='qimen')?'起局断事':(mode==='dice')?'掷骰子':'虔诚起卦';
+  $('startBtn').textContent=(mode==='liuyao')?'摇卦解卦':(mode==='qimen')?'起局断事':(mode==='tarot')?'抽牌解牌':(mode==='dice')?'掷骰子':'虔诚起卦';
 });
 
 // 六爻模式切换：AI摇 / 自己摇
@@ -10058,6 +10214,13 @@ $('lyModeChips').addEventListener('click',e=>{
   [...$('lyModeChips').children].forEach(x=>x.classList.remove('on'));
   c.classList.add('on');
   $('lySelfForm').hidden=(c.dataset.lymode!=='self');
+});
+
+// 塔罗牌阵切换
+$('tarotSpreadChips').addEventListener('click',e=>{
+  const c=e.target.closest('.chip'); if(!c) return;
+  [...$('tarotSpreadChips').children].forEach(x=>x.classList.remove('on'));
+  c.classList.add('on');
 });
 
 /* ========== 渲染 ========== */
@@ -10198,6 +10361,38 @@ $('startBtn').addEventListener('click',async ()=>{
     bd.textContent=qmResult.grade; bd.className='badge '+(qmResult.grade==='吉'?'good':'bad');
     // 解局
     const txt=readQiMen(qmResult,qq);
+    $('rText').innerHTML=txt.replace(/\n/g,'<br>');
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+
+  // ---- 塔罗牌 ----
+  if(mode==='tarot'){
+    const tq=($('tarotQuestion').value||'').trim();
+    if(!tq){ alert('请输入你想问的问题'); resetRitual(); return; }
+    $('casting').hidden=true; $('result').hidden=false;
+    $('numCards').hidden=true; $('wheelBox').hidden=true;
+    $('bazi').hidden=true; $('hehun').hidden=true;
+    $('verdict').hidden=false;
+    $('vName').textContent='塔罗牌';
+    const bd=$('vBadge'); bd.textContent=''; bd.className='badge good';
+    $('vVerse').textContent='';
+    $('vMeta').innerHTML='';
+    $('reading').hidden=false;
+    $('rTag').textContent='塔罗 · 韦特解牌';
+    $('rText').innerHTML='';
+    $('luck').hidden=true;
+    $('againBtn').textContent='再抽一次';
+    // 抽牌动画
+    stage.innerHTML='洗牌切牌 · 心诚则灵<span class="dot"></span>';
+    await sleep(1500);
+    // 抽牌
+    const spread=$('tarotSpreadChips').querySelector('.on').dataset.spread;
+    const n=parseInt(spread);
+    const cards=drawTarot(n);
+    // 解牌
+    const txt=readTarot(cards,spread,tq);
+    $('vName').textContent=cards.map(c=>c.name).join(' · ');
     $('rText').innerHTML=txt.replace(/\n/g,'<br>');
     window.scrollTo({top:0,behavior:'smooth'});
     return;
