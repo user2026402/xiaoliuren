@@ -627,7 +627,8 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
     </div>
     <div class="mode-toggle" id="modeToggle">
       <button class="on" data-mode="one" type="button">一事起卦</button>
-      <button data-mode="birth" type="button">本命起卦</button>
+      <button data-mode="liuyao" type="button">六爻</button>
+      <button data-mode="qimen" type="button">奇门遁甲</button>
       <button data-mode="dice" type="button">占星骰子</button>
     </div>
 
@@ -657,64 +658,59 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
       </div>
     </div>
 
-    <div id="birthForm" hidden>
+    <div id="liuyaoForm" hidden>
       <div class="ritual-note">
-        <p class="ask-label">本命起卦 · 以生辰定大势</p>
-        <p class="tiny">以出生之月、日、时为数顺数而得本命之卦，一生大势随缘而定。</p>
+        <p class="ask-label">六爻纳甲 · 一事一占</p>
+        <p class="tiny">传统六爻起卦，心诚则灵。可自己摇卦，也可让AI代摇。</p>
       </div>
-      <div class="birth-grid">
-        <div class="birth-field"><label for="bYear">出生年份</label><input id="bYear" type="number" min="1900" max="2100" placeholder="如 2006" inputmode="numeric"></div>
-        <div class="birth-field"><label for="bMonth">出生月份</label><select id="bMonth"></select></div>
-        <div class="birth-field"><label for="bDay">出生日</label><select id="bDay"></select></div>
-        <div class="birth-field"><label for="bHour">出生时辰</label>
-          <select id="bHour">
-            <option value="1">子时（23–1点）</option><option value="2">丑时（1–3点）</option>
-            <option value="3">寅时（3–5点）</option><option value="4">卯时（5–7点）</option>
-            <option value="5">辰时（7–9点）</option><option value="6">巳时（9–11点）</option>
-            <option value="7">午时（11–13点）</option><option value="8">未时（13–15点）</option>
-            <option value="9">申时（15–17点）</option><option value="10">酉时（17–19点）</option>
-            <option value="11">戌时（19–21点）</option><option value="12">亥时（21–23点）</option>
-            <option value="0">不确定 · 随缘</option>
+      <div style="margin:16px 0">
+        <input id="lyQuestion" type="text" placeholder="你想问什么？比如：我和他能成吗？" style="width:100%;padding:12px;border:1px solid var(--sage);border-radius:12px;font-size:14px;box-sizing:border-box">
+      </div>
+      <div class="chips" id="lyModeChips" style="margin-bottom:16px">
+        <button type="button" class="chip on" data-lymode="ai">AI代摇</button>
+        <button type="button" class="chip" data-lymode="self">自己摇卦</button>
+      </div>
+      <div id="lySelfForm" hidden style="margin-bottom:16px">
+        <p class="tiny" style="margin-bottom:8px">摇6次，从下往上记录。三个硬币：字=背面，花=正面。</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <select id="ly1" style="padding:8px;border:1px solid var(--sage);border-radius:8px;font-size:13px">
+            <option value="6">老阴 ⚏（三个背）</option><option value="7">少阳 ⚊（两背一花）</option>
+            <option value="8">少阴 ⚋（两花一背）</option><option value="9">老阳 ⚌（三个花）</option>
+          </select>
+          <select id="ly2" style="padding:8px;border:1px solid var(--sage);border-radius:8px;font-size:13px">
+            <option value="7">少阳 ⚊（初爻）</option><option value="6">老阴 ⚏</option>
+            <option value="8">少阴 ⚋</option><option value="9">老阳 ⚌</option>
+          </select>
+          <select id="ly3" style="padding:8px;border:1px solid var(--sage);border-radius:8px;font-size:13px">
+            <option value="7">少阳 ⚊（二爻）</option><option value="6">老阴 ⚏</option>
+            <option value="8">少阴 ⚋</option><option value="9">老阳 ⚌</option>
+          </select>
+          <select id="ly4" style="padding:8px;border:1px solid var(--sage);border-radius:8px;font-size:13px">
+            <option value="7">少阳 ⚊（三爻）</option><option value="6">老阴 ⚏</option>
+            <option value="8">少阴 ⚋</option><option value="9">老阳 ⚌</option>
+          </select>
+          <select id="ly5" style="padding:8px;border:1px solid var(--sage);border-radius:8px;font-size:13px">
+            <option value="7">少阳 ⚊（四爻）</option><option value="6">老阴 ⚏</option>
+            <option value="8">少阴 ⚋</option><option value="9">老阳 ⚌</option>
+          </select>
+          <select id="ly6" style="padding:8px;border:1px solid var(--sage);border-radius:8px;font-size:13px">
+            <option value="7">少阳 ⚊（五爻）</option><option value="6">老阴 ⚏</option>
+            <option value="8">少阴 ⚋</option><option value="9">老阳 ⚌</option>
           </select>
         </div>
-        <div class="birth-field"><label for="bGender">性别</label>
-          <select id="bGender">
-            <option value="男">男</option><option value="女">女</option><option value="">暂不说明</option>
-          </select>
-        </div>
-        <div class="birth-field full"><label for="bCity">常居城市（选填）</label><input id="bCity" type="text" placeholder="用于结合开运方位建议"></div>
+        <p class="tiny" style="margin-top:8px">从下往上摇，第一个选框是初爻（最下面），最后一个是上爻（最上面）。</p>
       </div>
-      <div class="hh-card">
-        <div class="hh-title">姻缘合盘 · 与 TA 会不会在一起</div>
-        <p class="tiny">填对方出生年月日（时辰、性别可留空），直接看：会不会在一起、怎么在一起、该不该争取。</p>
-        <div class="birth-grid">
-          <div class="birth-field"><label for="hYear">对方出生年</label><input id="hYear" type="number" min="1900" max="2100" placeholder="如 2005" inputmode="numeric"></div>
-          <div class="birth-field"><label for="hMonth">月份</label><select id="hMonth"></select></div>
-          <div class="birth-field"><label for="hDay">日</label><select id="hDay"></select></div>
-          <div class="birth-field"><label for="hHour">时辰（选填）</label>
-            <select id="hHour">
-              <option value="0">不确定</option><option value="1">子时（23–1点）</option><option value="2">丑时（1–3点）</option>
-              <option value="3">寅时（3–5点）</option><option value="4">卯时（5–7点）</option>
-              <option value="5">辰时（7–9点）</option><option value="6">巳时（9–11点）</option>
-              <option value="7">午时（11–13点）</option><option value="8">未时（13–15点）</option>
-              <option value="9">申时（15–17点）</option><option value="10">酉时（17–19点）</option>
-              <option value="11">戌时（19–21点）</option><option value="12">亥时（21–23点）</option>
-            </select>
-          </div>
-          <div class="birth-field"><label for="hGender">性别（选填）</label>
-            <select id="hGender"><option value="男">男</option><option value="女">女</option><option value="">暂不说明</option></select>
-          </div>
-          <div class="birth-field full"><label>当前关系状态</label>
-            <div class="chips" id="relChips">
-              <button type="button" class="chip" data-rel="暗恋">暗恋 / 有好感</button>
-              <button type="button" class="chip on" data-rel="暧昧">暧昧中</button>
-              <button type="button" class="chip" data-rel="在一起">已在一起</button>
-              <button type="button" class="chip" data-rel="复合">断联 / 想复合</button>
-            </div>
-          </div>
-        </div>
-        <button class="hh-btn" id="hehunBtn" type="button">合婚预测</button>
+    </div>
+
+    <div id="qimenForm" hidden>
+      <div class="ritual-note">
+        <p class="ask-label">奇门遁甲 · 时空决策</p>
+        <p class="tiny">以时间起局，看天时地利人和，适合问"该不该做""往哪走""什么时候动"。</p>
       </div>
+      <div style="margin:16px 0">
+        <input id="qmQuestion" type="text" placeholder="你想问什么？比如：我该不该跳槽？" style="width:100%;padding:12px;border:1px solid var(--sage);border-radius:12px;font-size:14px;box-sizing:border-box">
+      </div>
+      <p class="tiny">奇门遁甲按当前时间自动起局，不需要手动输入。</p>
     </div>
 
     <!-- ===== 占星骰子 ===== -->
@@ -9606,6 +9602,164 @@ const DICE_HOUSES=[
   {num:11,mean:'朋友、群体、愿望——这件事跟朋友、圈子、你的愿望有关'},
   {num:12,mean:'潜意识、隐秘、结束——这件事跟藏着的东西、收尾、潜意识有关'}
 ];
+/* ========== 六爻排盘与解卦 ========== */
+// 八卦：从下往上三爻，1=阳,0=阴
+const BAGUA={
+  '111':{name:'乾',nature:'天'},
+  '010':{name:'坎',nature:'水'},
+  '100':{name:'艮',nature:'山'},
+  '001':{name:'震',nature:'雷'},
+  '011':{name:'巽',nature:'风'},
+  '101':{name:'离',nature:'火'},
+  '000':{name:'坤',nature:'地'},
+  '110':{name:'兑',nature:'泽'}
+};
+// 六十四卦名：上卦+下卦
+const GUA64={
+  '乾乾':'乾为天','坎坎':'坎为水','艮艮':'艮为山','震震':'震为雷','巽巽':'巽为风','离离':'离为火','坤坤':'坤为地','兑兑':'兑为泽',
+  '乾坤':'天地否','坤乾':'地天泰','乾坎':'天水讼','坎乾':'水天需','乾艮':'天山遁','艮乾':'山天大畜','乾震':'天雷无妄','震乾':'雷天大壮',
+  '乾巽':'天风姤','巽乾':'风天小畜','乾离':'天火同人','离乾':'火天大有','乾兑':'天泽履','兑乾':'泽天夬',
+  '坎艮':'水山蹇','艮坎':'山水蒙','坎震':'水雷屯','震坎':'雷水解','坎巽':'水风井','巽坎':'风水涣','坎离':'水火既济','离坎':'火水未济',
+  '坎兑':'水泽节','兑坎':'泽水困','艮震':'山雷颐','震艮':'雷山小过','艮巽':'山风蛊','巽艮':'风山渐','艮离':'山火贲','离艮':'火山旅',
+  '艮兑':'山泽损','兑艮':'泽山咸','震巽':'雷风恒','巽震':'风雷益','震离':'雷火丰','离震':'火雷噬嗑','震兑':'雷泽归妹','兑震':'泽雷随',
+  '巽离':'风火家人','离巽':'火风鼎','巽兑':'风泽中孚','兑巽':'泽风大过','离兑':'火泽睽','兑离':'泽火革','坤艮':'地山谦','艮坤':'山地剥',
+  '坤震':'地雷复','震坤':'雷地豫','坤巽':'地风升','巽坤':'风地观','坤离':'地火明夷','离坤':'火地晋','坤兑':'地泽临','兑坤':'泽地萃'
+};
+// 六爻排盘
+function castLiuYao(yaoes){
+  // yaoes: [初爻,二爻,三爻,四爻,五爻,上爻]，每个值6/7/8/9
+  const benYaoes=yaoes.map(y=>y===6||y===8?0:1); // 0=阴,1=阳
+  const bianYaoes=yaoes.map((y,i)=>{
+    if(y===6||y===9){ return benYaoes[i]===0?1:0; } // 动爻变
+    return benYaoes[i];
+  });
+  const dong=yaoes.map((y,i)=>(y===6||y===9)?i+1:0).filter(x=>x>0); // 动爻位置（1-6）
+  // 下卦（初、二、三爻）
+  const xia=benYaoes.slice(0,3).join('');
+  // 上卦（四、五、上爻）
+  const shang=benYaoes.slice(3,6).join('');
+  const xiaGua=BAGUA[xia].name;
+  const shangGua=BAGUA[shang].name;
+  const benGua=GUA64[shangGua+xiaGua]||shangGua+xiaGua;
+  // 变卦
+  const xiaBian=bianYaoes.slice(0,3).join('');
+  const shangBian=bianYaoes.slice(3,6).join('');
+  const xiaBianGua=BAGUA[xiaBian].name;
+  const shangBianGua=BAGUA[shangBian].name;
+  const bianGua=dong.length? (GUA64[shangBianGua+xiaBianGua]||shangBianGua+xiaBianGua) : '无动爻';
+  // 简化吉凶判断
+  const jiongGua=['否','讼','剥','复','坎','离','大过','颐','睽','归妹'];
+  const jiGua=['泰','大壮','大有','乾','坤','谦','渐','鼎','丰','既济'];
+  let grade='平';
+  if(jiGua.some(g=>benGua.includes(g))) grade='吉';
+  if(jiongGua.some(g=>benGua.includes(g))) grade='凶';
+  if(dong.length===0) grade='平';
+  return {benGua,bianGua,dong,grade,yaoes,benYaoes};
+}
+// 六爻解卦（大白话）
+function readLiuYao(result,q){
+  let txt='';
+  // 1. 先定卦名和动爻
+  txt+='你起的是「'+result.benGua+'」';
+  if(result.dong.length){
+    txt+='，动爻在第'+result.dong.join('、')+'爻，变卦是「'+result.bianGua+'」。';
+  }else{
+    txt+='，没有动爻，就看本卦的趋势。';
+  }
+  txt+='\n\n';
+  // 2. 根据卦象说大势
+  if(result.grade==='吉'){
+    txt+='整体来看，卦象是偏吉的。你问这件事，底子是好的，方向对了，只要按部就班推进，大概率能成。';
+  }else if(result.grade==='凶'){
+    txt+='整体来看，卦象偏凶。你问这件事，现在时机还不对，或者方向有点偏，硬来容易碰壁。别急着冲，先等等。';
+  }else{
+    txt+='整体来看，卦象平平。这件事成不成，主要看你怎么做，卦象只是给个方向提示，没有特别的吉凶偏向。';
+  }
+  txt+='\n\n';
+  // 3. 根据问题类型说具体
+  if(q.includes('钱')||q.includes('财')||q.includes('赚')||q.includes('工作')||q.includes('事业')){
+    txt+='你问的是财运/事业：';
+    if(result.grade==='吉') txt+='财运不错，有进账机会。事业上也有上升空间，适合主动争取。';
+    else if(result.grade==='凶') txt+='财运一般，别乱投资。事业上压力大，别急着跳槽或创业，先稳住。';
+    else txt+='财运平稳，正财为主。事业上没什么大机会，也没什么大风险，慢慢来。';
+  }else if(q.includes('爱')||q.includes('情')||q.includes('他')||q.includes('她')||q.includes('对象')||q.includes('脱单')){
+    txt+='你问的是感情：';
+    if(result.grade==='吉') txt+='感情运不错，有机会遇到对的人。如果是已有目标，主动一点就能有进展。';
+    else if(result.grade==='凶') txt+='感情运一般，容易有误会或摩擦。别急着确定关系，先多了解了解。';
+    else txt+='感情平平，顺其自然。该来的总会来，别太急。';
+  }else if(q.includes('考')||q.includes('学')||q.includes('试')){
+    txt+='你问的是学业/考试：';
+    if(result.grade==='吉') txt+='考试运不错，发挥会比预期好。只要准备充分，正常发挥就行。';
+    else if(result.grade==='凶') txt+='考试运一般，容易粗心或紧张。多检查，别太焦虑。';
+    else txt+='考试运平平，结果主要看你复习得怎么样。';
+  }else{
+    txt+='你问的是「'+q+'」：';
+    if(result.grade==='吉') txt+='这件事整体顺利，你心里想的那个方向是对的，可以放心去做。';
+    else if(result.grade==='凶') txt+='这件事现在有点卡，别急着做决定。再等等，时机到了自然就顺了。';
+    else txt+='这件事不好不坏，看你怎么操作。多想想，别冲动。';
+  }
+  txt+='\n\n';
+  // 4. 动爻提示
+  if(result.dong.length){
+    txt+='有动爻说明这件事还在变化中，不是定局。动爻在变，说明事情会往变卦的方向发展。变卦是「'+result.bianGua+'」，意味着最终会往那个方向走。';
+  }else{
+    txt+='没有动爻，说明这件事现在比较稳定，短期内不会有大变化。';
+  }
+  return txt;
+}
+
+/* ========== 奇门遁甲排盘与解局（简化版） ========== */
+function castQiMen(){
+  // 简化版：随机一个局，判断吉凶
+  const juNames=['阳遁一局','阳遁二局','阳遁三局','阳遁四局','阳遁五局','阳遁六局','阳遁七局','阳遁八局','阳遁九局',
+    '阴遁一局','阴遁二局','阴遁三局','阴遁四局','阴遁五局','阴遁六局','阴遁七局','阴遁八局','阴遁九局'];
+  const juName=juNames[Math.floor(Math.random()*juNames.length)];
+  // 简化吉凶：随机但偏向平
+  const r=Math.random();
+  let grade='平';
+  if(r<0.3) grade='吉';
+  else if(r>0.7) grade='凶';
+  return {juName,grade};
+}
+function readQiMen(result,q){
+  let txt='';
+  txt+='你起的是「'+result.juName+'」。\n\n';
+  // 大势
+  if(result.grade==='吉'){
+    txt+='整体来看，这个局是吉的。天时地利都站在你这边，这件事适合主动出击，越早动越好。';
+  }else if(result.grade==='凶'){
+    txt+='整体来看，这个局偏凶。现在时机不对，天时不利，硬来容易吃亏。先等等，别冲动。';
+  }else{
+    txt+='整体来看，这个局平平。不好不坏，看你怎么做。天时一般，主要靠你自己。';
+  }
+  txt+='\n\n';
+  // 根据问题类型
+  if(q.includes('跳')||q.includes('换工作')||q.includes('创业')||q.includes('辞职')){
+    txt+='你问的是事业变动：';
+    if(result.grade==='吉') txt+='适合动。现在是好时机，跳槽或创业都有机会。往东边或南边走更好。';
+    else if(result.grade==='凶') txt+='不适合动。现在跳槽容易踩坑，先稳住。再等三个月看看。';
+    else txt+='可动可不动。如果现在的工作实在待不下去了，可以看看新机会；如果还能忍，就再等等。';
+  }else if(q.includes('钱')||q.includes('财')||q.includes('投资')){
+    txt+='你问的是财运：';
+    if(result.grade==='吉') txt+='财运不错，有进账机会。可以适当投资，但别贪多。';
+    else if(result.grade==='凶') txt+='财运不好，别投资。捂紧钱包，别乱花钱。';
+    else txt+='财运平平，正财为主。别想一夜暴富，踏踏实实赚钱。';
+  }else if(q.includes('爱')||q.includes('情')||q.includes('他')||q.includes('她')){
+    txt+='你问的是感情：';
+    if(result.grade==='吉') txt+='感情运不错，有机会。可以主动一点，别等。';
+    else if(result.grade==='凶') txt+='感情运不好，容易有误会。别急着表白或确定关系，先缓一缓。';
+    else txt+='感情平平，顺其自然。';
+  }else{
+    txt+='你问的是「'+q+'」：';
+    if(result.grade==='吉') txt+='这件事适合做，方向对了，趁早动。';
+    else if(result.grade==='凶') txt+='这件事先别做，时机不对。再等等。';
+    else txt+='这件事不好不坏，看你自己怎么选。';
+  }
+  txt+='\n\n';
+  txt+='奇门遁甲看的是时空——什么时候做、往哪个方向做。现在这个局告诉你：'+(result.grade==='吉'?'现在就是好时机，别犹豫。':result.grade==='凶'?'现在不是好时机，再等等。':'时机一般，看你自己。');
+  return txt;
+}
+
 function castDice(){
   const p=DICE_PLANETS[Math.floor(Math.random()*DICE_PLANETS.length)];
   const s=DICE_SIGNS[Math.floor(Math.random()*DICE_SIGNS.length)];
@@ -9885,22 +10039,25 @@ function count(from,n){return (from + (n-1)) % 6}
 const $=id=>document.getElementById(id);
 let category='qg';
 let manualMode=false;
-let mode='one'; // 'one' | 'birth'
+let mode='one'; // 'one' | 'liuyao' | 'qimen' | 'dice'
 
-// 填充本命 / 对方月份、日
-(function(){
-  const m=$('bMonth'),d=$('bDay'),hm=$('hMonth'),hd=$('hDay');
-  for(let i=1;i<=12;i++){ m.add(new Option(i+' 月',i)); hm.add(new Option(i+' 月',i)); }
-  for(let i=1;i<=31;i++){ d.add(new Option(i+' 日',i)); hd.add(new Option(i+' 日',i)); }
-})();
 $('modeToggle').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   mode=b.dataset.mode;
   [...$('modeToggle').children].forEach(x=>x.classList.toggle('on',x===b));
   $('oneForm').hidden=(mode!=='one');
-  $('birthForm').hidden=(mode!=='birth');
+  $('liuyaoForm').hidden=(mode!=='liuyao');
+  $('qimenForm').hidden=(mode!=='qimen');
   $('diceForm').hidden=(mode!=='dice');
-  $('startBtn').textContent=(mode==='birth')?'推演本命':(mode==='dice')?'掷骰子':'虔诚起卦';
+  $('startBtn').textContent=(mode==='liuyao')?'摇卦解卦':(mode==='qimen')?'起局断事':(mode==='dice')?'掷骰子':'虔诚起卦';
+});
+
+// 六爻模式切换：AI摇 / 自己摇
+$('lyModeChips').addEventListener('click',e=>{
+  const c=e.target.closest('.chip'); if(!c) return;
+  [...$('lyModeChips').children].forEach(x=>x.classList.remove('on'));
+  c.classList.add('on');
+  $('lySelfForm').hidden=(c.dataset.lymode!=='self');
 });
 
 /* ========== 渲染 ========== */
@@ -9971,23 +10128,78 @@ $('startBtn').addEventListener('click',async ()=>{
   await sleep(1100);
 
   // 取数 / 命理计算
-  const isBirth=(mode==='birth');
-  if(isBirth){
-    const y=parseInt($('bYear').value,10);
-    const mo=parseInt($('bMonth').value,10);
-    const da=parseInt($('bDay').value,10);
-    let ho=parseInt($('bHour').value,10);
-    if(!y||y<1900||y>2100||!mo||!da){ alert('请补全出生年月日'); resetRitual(); return; }
-    if(ho===0){ ho=1+Math.floor(Math.random()*12); } // 时辰不确定 → 随缘取一时辰
-    const gender=$('bGender').value||'男';
-    const gv=(gender==='男')?1:0;
-    const city=($('bCity').value||'').trim();
+
+  // ---- 六爻 ----
+  if(mode==='liuyao'){
+    const lq=($('lyQuestion').value||'').trim();
+    if(!lq){ alert('请输入你想问的问题'); resetRitual(); return; }
     $('casting').hidden=true; $('result').hidden=false;
     $('numCards').hidden=true; $('wheelBox').hidden=true;
-    $('verdict').hidden=true; $('reading').hidden=true; $('luck').hidden=true;
-    $('bazi').hidden=false;
-    $('againBtn').textContent='重新推演';
-    renderBaZi(y,mo,da,ho,gv,gender,city);
+    $('bazi').hidden=true; $('hehun').hidden=true;
+    $('verdict').hidden=false;
+    $('vName').textContent='六爻卦象';
+    const bd=$('vBadge'); bd.textContent=''; bd.className='badge good';
+    $('vVerse').textContent='';
+    $('vMeta').innerHTML='';
+    $('reading').hidden=false;
+    $('rTag').textContent='六爻 · 纳甲解卦';
+    $('rText').innerHTML='';
+    $('luck').hidden=true;
+    $('againBtn').textContent='再摇一卦';
+    // 摇卦
+    let yaoes;
+    const selfMode=$('lyModeChips').querySelector('.on').dataset.lymode;
+    if(selfMode==='self'){
+      yaoes=[parseInt($('ly1').value),parseInt($('ly2').value),parseInt($('ly3').value),parseInt($('ly4').value),parseInt($('ly5').value),parseInt($('ly6').value)];
+    }else{
+      // AI代摇：每次三个硬币，随机得6/7/8/9
+      yaoes=[];
+      for(let i=0;i<6;i++){
+        const coins=[Math.floor(Math.random()*2),Math.floor(Math.random()*2),Math.floor(Math.random()*2)]; // 0=背,1=花
+        const backs=coins.filter(c=>c===0).length;
+        if(backs===3) yaoes.push(6); // 老阴
+        else if(backs===2) yaoes.push(7); // 少阳
+        else if(backs===1) yaoes.push(8); // 少阴
+        else yaoes.push(9); // 老阳
+      }
+    }
+    // 排盘
+    const lyResult=castLiuYao(yaoes);
+    // 显示卦名
+    $('vName').textContent=lyResult.benGua+'之'+lyResult.bianGua;
+    bd.textContent=lyResult.grade; bd.className='badge '+(lyResult.grade==='吉'?'good':'bad');
+    // 解卦
+    const txt=readLiuYao(lyResult,lq);
+    $('rText').innerHTML=txt.replace(/\n/g,'<br>');
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+
+  // ---- 奇门遁甲 ----
+  if(mode==='qimen'){
+    const qq=($('qmQuestion').value||'').trim();
+    if(!qq){ alert('请输入你想问的问题'); resetRitual(); return; }
+    $('casting').hidden=true; $('result').hidden=false;
+    $('numCards').hidden=true; $('wheelBox').hidden=true;
+    $('bazi').hidden=true; $('hehun').hidden=true;
+    $('verdict').hidden=false;
+    $('vName').textContent='奇门局盘';
+    const bd=$('vBadge'); bd.textContent=''; bd.className='badge good';
+    $('vVerse').textContent='';
+    $('vMeta').innerHTML='';
+    $('reading').hidden=false;
+    $('rTag').textContent='奇门遁甲 · 时空决策';
+    $('rText').innerHTML='';
+    $('luck').hidden=true;
+    $('againBtn').textContent='再起一局';
+    // 起局（简化版）
+    const qmResult=castQiMen();
+    $('vName').textContent=qmResult.juName;
+    bd.textContent=qmResult.grade; bd.className='badge '+(qmResult.grade==='吉'?'good':'bad');
+    // 解局
+    const txt=readQiMen(qmResult,qq);
+    $('rText').innerHTML=txt.replace(/\n/g,'<br>');
+    window.scrollTo({top:0,behavior:'smooth'});
     return;
   }
 
@@ -10677,25 +10889,6 @@ function buildHehunFuture(A,B,rel){
     box.appendChild(d);
   });
 }
-
-// 当前关系状态（暗恋 / 暧昧 / 在一起 / 复合）
-let relState='暧昧';
-$('relChips').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b) return;
-  relState=b.dataset.rel;
-  [...$('relChips').children].forEach(x=>x.classList.toggle('on',x===b));
-});
-
-$('hehunBtn').addEventListener('click',()=>{
-  const hy=parseInt($('hYear').value,10),hm=parseInt($('hMonth').value,10),hd=parseInt($('hDay').value,10);
-  let hh=parseInt($('hHour').value,10);
-  const hgender=$('hGender').value||'暂不说明';
-  if(!hy||hy<1900||hy>2100||!hm||!hd){ alert('请补全对方出生年月日'); return; }
-  if(hh===0){ hh=1+Math.floor(Math.random()*12); }
-  $('ritual').hidden=true; $('result').hidden=true; $('casting').hidden=false;
-  const stage=$('castStage'); stage.innerHTML='合盘推演中 · 稍候片刻<span class="dot"></span>';
-  setTimeout(()=>{ $('casting').hidden=true; $('result').hidden=false; renderHehun(hy,hm,hd,hh,hgender); window.scrollTo({top:0,behavior:'smooth'}); },1700);
-});
 
 /* ========== 掌诀科普渲染 ========== */
 const grid=$('palmGrid');
