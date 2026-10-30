@@ -926,6 +926,9 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
     </div>
 
     <button class="again-btn" id="againBtn" type="button">再问一卦</button>
+    <p style="text-align:center;font-size:11px;color:var(--sage);opacity:0.6;margin-top:20px">
+      🔒 所有排盘计算均在本地完成 · 不收集任何用户数据 · 使用密码学安全随机数
+    </p>
     <p class="disclaimer">卦象随缘而起，仅供休闲参考，莫因卦象束缚本心；把握当下的选择，才是真正的「灵」。</p>
   </section>
 
@@ -9801,8 +9804,8 @@ const TAROT_MINOR=[
 function drawTarot(n){
   const all=[...TAROT_MAJOR.map(t=>({...t,type:'大阿卡纳'})),...TAROT_MINOR.map(t=>({...t,type:'小阿卡纳'}))];
   // 无放回抽n张
-  const shuffled=all.sort(()=>Math.random()-0.5);
-  const picked=shuffled.slice(0,n).map(card=>({...card, reversed:Math.random()<0.5}));
+  const shuffled=all.sort(()=>secureRandom()-0.5);
+  const picked=shuffled.slice(0,n).map(card=>({...card, reversed:secureRandom()<0.5}));
   return picked;
 }
 // 解牌
@@ -9814,25 +9817,44 @@ function readTarot(cards,spread,q){
     '5':['现状','阻碍','建议','结果','环境']
   };
   const posNames=positions[spread]||['指引'];
-  txt+='你抽了'+cards.length+'张牌，牌阵是「'+posNames.join('、')+'」。\n\n';
-  // 逐张解读
+
+  // 第一步：排盘数据
+  txt+='📊 排盘数据\n';
+  txt+='牌阵：'+posNames.join('、')+' · 共'+cards.length+'张\n';
+  cards.forEach((card,i)=>{
+    txt+='  '+posNames[i]+'：'+card.name+(card.reversed?'（逆位）':'（正位）')+' ['+card.type+']\n';
+  });
+  txt+='\n';
+
+  // 第二步：元素分布分析
+  txt+='🔍 元素分布分析\n';
+  const suitCount={权杖:0,圣杯:0,宝剑:0,星币:0};
+  cards.forEach(c=>{ if(c.suit) suitCount[c.suit]++; });
+  const elementMap={权杖:'火象·行动力',圣杯:'水象·感情',宝剑:'风象·思维',星币:'土象·物质'};
+  let elementTxt=[];
+  for(const s in suitCount){
+    if(suitCount[s]>0) elementTxt.push(suitCount[s]+'张'+elementMap[s]);
+  }
+  txt+='元素构成：'+(elementTxt.length>0?elementTxt.join('、'):'大阿卡纳主导')+'\n';
+  const majorCount=cards.filter(c=>c.type==='大阿卡纳').length;
+  txt+='大阿卡纳占比：'+majorCount+'/'+cards.length+(majorCount>=2?'（重大事件）':'（日常事务）')+'\n';
+  const reversedCount=cards.filter(c=>c.reversed).length;
+  txt+='逆位比例：'+reversedCount+'/'+cards.length+(reversedCount>=2?'（能量受阻）':'（能量顺畅）')+'\n\n';
+
+  // 第三步：逐张解读
+  txt+='📖 逐牌解读\n';
   cards.forEach((card,i)=>{
     txt+='【'+posNames[i]+'】'+card.name+(card.reversed?'（逆位）':'（正位）')+'\n';
     if(card.reversed){
-      txt+='逆位的意思是：这张牌的能量有点卡住了，或者反过来。'+card.mean+'，但现在是逆位，说明'+card.mean.split('——')[1]+'这方面有点不太顺，或者有点过度了。\n\n';
+      txt+='逆位：能量卡住了。'+card.mean.split('——')[1]+'这方面现在有点不顺，或者过度了。\n\n';
     }else{
       txt+=card.mean+'。\n\n';
     }
   });
-  // 整体判断
+
+  // 第四步：综合结论
   txt+='---\n\n';
-  txt+='整体来看：';
-  // 大阿卡纳占比
-  const majorCount=cards.filter(c=>c.type==='大阿卡纳').length;
-  if(majorCount>=2) txt+='大阿卡纳占比高，说明这件事是命中注定的大事情，不是小打小闹。';
-  else txt+='主要是小阿卡纳，说明这件事更多是日常琐事，不是什么大转折。';
-  txt+='\n\n';
-  // 根据问题类型
+  txt+='🎯 综合判断\n';
   if(q.includes('爱')||q.includes('情')||q.includes('他')||q.includes('她')||q.includes('对象')){
     txt+='你问的是感情：';
     const loveCards=cards.filter(c=>c.name.includes('恋人')||c.name.includes('圣杯')||c.name.includes('皇后')||c.name.includes('太阳'));
@@ -9850,7 +9872,7 @@ function readTarot(cards,spread,q){
     else txt+='整体一般，需要多努力。';
   }
   txt+='\n\n';
-  txt+='塔罗给你的建议：别想太多，跟着感觉走。牌面只是给你个方向，最终怎么做还是看你自己。';
+  txt+='💡 建议：别想太多，跟着感觉走。牌面只是给你个方向，最终怎么做还是看你自己。';
   return txt;
 }
 
@@ -9965,9 +9987,9 @@ function castQiMen(){
   // 简化版：随机一个局，判断吉凶
   const juNames=['阳遁一局','阳遁二局','阳遁三局','阳遁四局','阳遁五局','阳遁六局','阳遁七局','阳遁八局','阳遁九局',
     '阴遁一局','阴遁二局','阴遁三局','阴遁四局','阴遁五局','阴遁六局','阴遁七局','阴遁八局','阴遁九局'];
-  const juName=juNames[Math.floor(Math.random()*juNames.length)];
+  const juName=juNames[Math.floor(secureRandom()*juNames.length)];
   // 简化吉凶：随机但偏向平
-  const r=Math.random();
+  const r=secureRandom();
   let grade='平';
   if(r<0.3) grade='吉';
   else if(r>0.7) grade='凶';
@@ -10013,9 +10035,9 @@ function readQiMen(result,q){
 }
 
 function castDice(){
-  const p=DICE_PLANETS[Math.floor(Math.random()*DICE_PLANETS.length)];
-  const s=DICE_SIGNS[Math.floor(Math.random()*DICE_SIGNS.length)];
-  const h=DICE_HOUSES[Math.floor(Math.random()*DICE_HOUSES.length)];
+  const p=DICE_PLANETS[Math.floor(secureRandom()*DICE_PLANETS.length)];
+  const s=DICE_SIGNS[Math.floor(secureRandom()*DICE_SIGNS.length)];
+  const h=DICE_HOUSES[Math.floor(secureRandom()*DICE_HOUSES.length)];
   return {planet:p,sign:s,house:h};
 }
 // 问题类型识别
@@ -10289,6 +10311,17 @@ function count(from,n){return (from + (n-1)) % 6}
 
 /* ========== 状态 ========== */
 const $=id=>document.getElementById(id);
+
+// 加密安全随机数（替代Math.random，密码学级）
+function secureRandom(){
+  const arr=new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0]/4294967296; // [0,1)
+}
+// HTML转义（防XSS）
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 let category='qg';
 let manualMode=false;
 let mode='one'; // 'one' | 'liuyao' | 'qimen' | 'dice'
@@ -10391,7 +10424,7 @@ $('startBtn').addEventListener('click',async ()=>{
 
   // ---- 六爻 ----
   if(mode==='liuyao'){
-    const lq=($('lyQuestion').value||'').trim();
+    const lq=escapeHtml(($('lyQuestion').value||'').trim());
     if(!lq){ alert('请输入你想问的问题'); resetRitual(); return; }
     $('casting').hidden=true; $('result').hidden=false;
     $('numCards').hidden=true; $('wheelBox').hidden=true;
@@ -10415,7 +10448,7 @@ $('startBtn').addEventListener('click',async ()=>{
       // AI代摇：每次三个硬币，随机得6/7/8/9
       yaoes=[];
       for(let i=0;i<6;i++){
-        const coins=[Math.floor(Math.random()*2),Math.floor(Math.random()*2),Math.floor(Math.random()*2)]; // 0=背,1=花
+        const coins=[Math.floor(secureRandom()*2),Math.floor(secureRandom()*2),Math.floor(secureRandom()*2)]; // 0=背,1=花
         const backs=coins.filter(c=>c===0).length;
         if(backs===3) yaoes.push(6); // 老阴
         else if(backs===2) yaoes.push(7); // 少阳
@@ -10437,7 +10470,7 @@ $('startBtn').addEventListener('click',async ()=>{
 
   // ---- 奇门遁甲 ----
   if(mode==='qimen'){
-    const qq=($('qmQuestion').value||'').trim();
+    const qq=escapeHtml(($('qmQuestion').value||'').trim());
     if(!qq){ alert('请输入你想问的问题'); resetRitual(); return; }
     $('casting').hidden=true; $('result').hidden=false;
     $('numCards').hidden=true; $('wheelBox').hidden=true;
@@ -10465,7 +10498,7 @@ $('startBtn').addEventListener('click',async ()=>{
 
   // ---- 塔罗牌 ----
   if(mode==='tarot'){
-    const tq=($('tarotQuestion').value||'').trim();
+    const tq=escapeHtml(($('tarotQuestion').value||'').trim());
     if(!tq){ alert('请输入你想问的问题'); resetRitual(); return; }
     $('casting').hidden=true; $('result').hidden=false;
     $('numCards').hidden=true; $('wheelBox').hidden=true;
@@ -10547,7 +10580,7 @@ $('startBtn').addEventListener('click',async ()=>{
 
   // ---- 占星骰子 ----
   if(mode==='dice'){
-    const dq=($('diceQuestion').value||'').trim();
+    const dq=escapeHtml(($('diceQuestion').value||'').trim());
     $('casting').hidden=true; $('result').hidden=false;
     $('numCards').hidden=true; $('wheelBox').hidden=true;
     $('bazi').hidden=true; $('hehun').hidden=true;
@@ -10580,7 +10613,7 @@ $('startBtn').addEventListener('click',async ()=>{
 
   // ---- 一事起卦（小六壬）----
   // 自动从问题判断分类（用户手动选的 chip 优先）
-  const qText=($('question').value||'').trim();
+  const qText=escapeHtml(($('question').value||'').trim());
   // 把新的问题类型映射回旧的分类体系
   const qtMap={love_feeling:'qg',love_together:'qg',love:'qg',job:'sy',career:'sy',exam:'xy',study:'xy',money:'cy',health:'jk',travel:'cx',baby:'qt',what_happen:'qt',other:'qt'};
   const autoCat=qtMap[detectQuestionType(qText)]||'qt';
@@ -10595,7 +10628,7 @@ $('startBtn').addEventListener('click',async ()=>{
     if(![a,b,c].every(v=>v>=1&&v<=9)){ alert('请自选 1–9 的三位数'); resetRitual(); return; }
     nums=[a,b,c];
   }else{
-    nums=[1+Math.floor(Math.random()*9),1+Math.floor(Math.random()*9),1+Math.floor(Math.random()*9)];
+    nums=[1+Math.floor(secureRandom()*9),1+Math.floor(secureRandom()*9),1+Math.floor(secureRandom()*9)];
   }
   const p1=count(0,nums[0]);
   const p2=count(p1,nums[1]);
@@ -11314,7 +11347,7 @@ apple.addEventListener('click',function(){
       const heart=document.createElement('div');
       heart.className='heart';
       heart.textContent=['❤️','✨','🌟','💫','💕'][i];
-      heart.style.left=(rect.left+rect.width/2-10+Math.random()*20-10)+'px';
+      heart.style.left=(rect.left+rect.width/2-10+secureRandom()*20-10)+'px';
       heart.style.top=(rect.top+10)+'px';
       document.body.appendChild(heart);
       setTimeout(()=>heart.remove(),1500);
