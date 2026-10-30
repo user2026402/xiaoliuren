@@ -175,6 +175,49 @@ textarea:focus{outline:none;border-color:var(--sage)}
 .manual-box input:focus{outline:none;border-color:var(--sage)}
 .manual-box .dot{color:var(--blush);font-size:20px;font-weight:700}
 
+/* ========== 塔罗牌选牌 ========== */
+.tarot-deck {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+.tarot-card-back {
+  aspect-ratio: 2/3;
+  background: linear-gradient(135deg, #f8b4c8 0%, #e89bb4 100%);
+  border-radius: 8px;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(232, 155, 180, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.tarot-card-back:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(232, 155, 180, 0.4);
+}
+.tarot-card-back.selected {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 24px rgba(232, 155, 180, 0.5);
+  border-color: #d47a9a;
+}
+.tarot-card-back::after {
+  content: '✦';
+  font-size: 20px;
+  opacity: 0.6;
+}
+.tarot-picked-info {
+  text-align: center;
+  font-size: 14px;
+  color: var(--sage);
+  margin: 10px 0;
+}
+
 /* ========== 起卦动画 ========== */
 .casting{text-align:center;padding:60px 0;background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow)}
 .casting .mascot-mini{width:110px;height:110px;border-radius:50%;overflow:hidden;margin:0 auto 16px;border:3px solid var(--paper);box-shadow:0 8px 20px rgba(178,88,74,.15)}
@@ -10383,18 +10426,58 @@ $('startBtn').addEventListener('click',async ()=>{
     $('rText').innerHTML='';
     $('luck').hidden=true;
     $('againBtn').textContent='再抽一次';
-    // 抽牌动画
-    stage.innerHTML='洗牌切牌 · 心诚则灵<span class="dot"></span>';
-    await sleep(1500);
-    // 抽牌
+    // 牌阵数量
     const spread=$('tarotSpreadChips').querySelector('.on').dataset.spread;
     const n=parseInt(spread);
+    // 先随机抽好牌（隐藏），然后显示牌背让用户选
     const cards=drawTarot(n);
-    // 解牌
-    const txt=readTarot(cards,spread,tq);
-    $('vName').textContent=cards.map(c=>c.name).join(' · ');
-    $('rText').innerHTML=txt.replace(/\n/g,'<br>');
-    window.scrollTo({top:0,behavior:'smooth'});
+    // 生成10张牌背让用户选
+    const deckHtml='<div class="tarot-picked-info">默念你的问题，凭直觉选'+n+'张牌</div>'+
+      '<div class="tarot-deck" id="tarotDeck">'+
+      Array.from({length:10},(_,i)=>'<div class="tarot-card-back" data-idx="'+i+'"></div>').join('')+
+      '</div>';
+    $('vMeta').innerHTML=deckHtml;
+    // 记录选了几张
+    let pickedCount=0;
+    const pickedIdx=[];
+    const deck=$('tarotDeck');
+    deck.querySelectorAll('.tarot-card-back').forEach(card=>{
+      card.addEventListener('click',function(){
+        if(this.classList.contains('selected')){
+          this.classList.remove('selected');
+          pickedCount--;
+          const idx=pickedIdx.indexOf(parseInt(this.dataset.idx));
+          if(idx>-1) pickedIdx.splice(idx,1);
+        }else{
+          if(pickedCount>=n) return;
+          this.classList.add('selected');
+          pickedCount++;
+          pickedIdx.push(parseInt(this.dataset.idx));
+        }
+        if(pickedCount===n){
+          // 选完了，翻牌
+          setTimeout(()=>{
+            // 把选中的牌背变成正面
+            const selectedCards=deck.querySelectorAll('.tarot-card-back.selected');
+            selectedCards.forEach((el,i)=>{
+              const card=cards[i];
+              el.style.background='linear-gradient(135deg, #fff 0%, #fef5f8 100%)';
+              el.style.color='#d47a9a';
+              el.innerHTML='<div style="font-size:12px;text-align:center;padding:4px">'+
+                '<div style="font-weight:600">'+card.name+(card.reversed?'（逆）':'')+'</div>'+
+                '</div>';
+              el.style.cursor='default';
+              el.onclick=null;
+            });
+            // 显示解读
+            const txt=readTarot(cards,spread,tq);
+            $('vName').textContent=cards.map(c=>c.name).join(' · ');
+            $('rText').innerHTML=txt.replace(/\n/g,'<br>');
+            window.scrollTo({top:0,behavior:'smooth'});
+          },500);
+        }
+      });
+    });
     return;
   }
 
