@@ -10971,8 +10971,8 @@ async function appendAIReading(moduleName, question, paiPanDesc){
     aiDiv.style.cssText='margin-top:16px;padding-top:12px;border-top:1px dashed #ccc;';
     aiDiv.innerHTML='<b>🤖 AI解读：</b><span style="color:#999"> 思考中...</span>';
     rText.appendChild(aiDiv);
-    const apiUrl=localStorage.getItem('ai_api_url')||'https://open.bigmodel.cn/api/paas/v4/chat/completions';
-    const apiModel=localStorage.getItem('ai_api_model')||'glm-4-flash';
+    const apiUrl='https://corsproxy.io/?url='+encodeURIComponent('https://open.bigmodel.cn/api/paas/v4/chat/completions');
+    const apiModel='glm-4-flash';
     const controller=new AbortController();
     const tid=setTimeout(()=>controller.abort(),5000);
     const res=await fetch(apiUrl,{
