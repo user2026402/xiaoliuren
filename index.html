@@ -747,7 +747,6 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
   .xy-court{height:400px}
   .xy-char{width:46px;height:46px}
 }</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.38.4/supabase.min.js"></script>
 </head>
 <body>
 
@@ -12384,14 +12383,25 @@ $('auditModal').addEventListener('click',function(e){
     });
   });
 
-  // 初始化Supabase
+  // 初始化Supabase（懒加载，只有切到小院tab才加载）
   let sb=null;
-  try{
-    const SUPABASE_URL='https://bwyinhdquouiqxzzqmzy.supabase.co';
-    const SUPABASE_KEY='sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G';
-    sb=supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  }catch(e){
-    console.log('Supabase加载失败：',e);
+  function initSupabase(){
+    if(window.supabase){
+      try{
+        sb=supabase.createClient('https://bwyinhdquouiqxzzqmzy.supabase.co','sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G');
+      }catch(e){}
+      loadMessages();
+      return;
+    }
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.38.4/supabase.min.js';
+    s.onload=()=>{
+      try{
+        sb=supabase.createClient('https://bwyinhdquouiqxzzqmzy.supabase.co','sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G');
+      }catch(e){}
+      loadMessages();
+    };
+    document.head.appendChild(s);
   }
 
   // 树洞日记 localStorage（私密）
@@ -12486,7 +12496,7 @@ $('auditModal').addEventListener('click',function(e){
     s.async=true;
     msgContainer.appendChild(s);
   }
-  loadMessages();
+  initSupabase();
 
   // 写给未来的信（localStorage，写给自己的）
   const LKEY='xy_letters';
