@@ -10992,7 +10992,9 @@ async function appendAIReading(moduleName, question, paiPanDesc){
     clearTimeout(tid);
     const data=await res.json();
     aiDiv.innerHTML='<b>🤖 AI解读：</b><br>'+data.choices[0].message.content;
-  }catch(e){}
+  }catch(e){
+    aiDiv.innerHTML='<b>🤖 AI解读：</b><br><span style="color:#c00">加载失败：'+e.message+'</span>';
+  }
 }
 
 /* ========== 起卦流程 ========== */
