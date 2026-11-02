@@ -10960,9 +10960,10 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 async function appendAIReading(moduleName, question, paiPanDesc){
   try{
     const savedKey=localStorage.getItem('ai_api_key');
-    if(!savedKey) return;
-    let apiKey='';
-    try{apiKey=atob(savedKey);}catch(e){apiKey=savedKey;}
+    let apiKey='69dd0ed921d04f19a4f359093bf002c8.XlGfTy7iOKZuvMDS';
+    if(savedKey){
+      try{apiKey=atob(savedKey);}catch(e){apiKey=savedKey;}
+    }
     if(!apiKey) return;
     const rText=document.getElementById('rText');
     if(!rText) return;
