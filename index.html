@@ -1060,7 +1060,11 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
       <div class="xy-messageboard" style="margin-top:24px">
         <h3 style="margin:0 0 10px;font-size:16px;color:#8a6a4a">💌 留言板</h3>
         <p style="font-size:12px;color:#999;margin-bottom:10px">想说什么就说什么，匿名留言，不用注册。</p>
-        <div id="giscus-container"></div>
+        <textarea id="xyMsgInput" placeholder="写下你想说的话..." style="width:100%;min-height:60px;padding:10px;border:1px solid #e0d5c5;border-radius:10px;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;font-family:inherit"></textarea>
+        <div style="text-align:right;margin-top:8px">
+          <button id="xyMsgSend" style="background:#c9a87c;color:#fff;border:none;padding:8px 20px;border-radius:20px;cursor:pointer;font-size:13px">留言</button>
+        </div>
+        <div id="giscus-container" style="margin-top:16px"></div>
       </div>
     </div>
 
@@ -12446,39 +12450,69 @@ $('auditModal').addEventListener('click',function(e){
   });
   loadDiary();
 
-  // 留言板：优先Supabase，连不上就用Giscus
+  // 留言板：本地优先 + Supabase云端同步
+  const MSG_KEY='xy_messages';
+  const msgInput=document.getElementById('xyMsgInput');
+  const msgSend=document.getElementById('xyMsgSend');
   const msgList=document.createElement('div');
   msgList.id='xyMsgList';
   msgList.style.cssText='margin-top:12px;max-height:300px;overflow-y:auto';
   const msgContainer=document.getElementById('giscus-container');
-  msgContainer.appendChild(msgList);
 
-  async function loadMessages(){
-    if(!sb){
-      // Supabase连不上，用Giscus
-      loadGiscus();
+  function getLocalMsgs(){
+    try{return JSON.parse(localStorage.getItem(MSG_KEY)||'[]');}catch(e){return[];}
+  }
+  function saveLocalMsg(m){
+    let arr=getLocalMsgs();
+    arr.unshift(m);
+    if(arr.length>50)arr=arr.slice(0,50);
+    localStorage.setItem(MSG_KEY,JSON.stringify(arr));
+  }
+  function renderMsgs(arr){
+    msgList.innerHTML='';
+    if(!arr.length){
+      msgList.innerHTML='<div style="color:#aaa;font-size:13px;text-align:center;padding:20px">还没有留言，来说第一句吧～</div>';
       return;
     }
+    arr.forEach(m=>{
+      const div=document.createElement('div');
+      div.className='xy-diary-item';
+      div.innerHTML='<div>'+escapeHtml(m.content)+'</div>'+
+        '<div class="meta">'+new Date(m.created_at).toLocaleString()+'</div>';
+      msgList.appendChild(div);
+    });
+  }
+  // 先渲染本地留言
+  renderMsgs(getLocalMsgs());
+  msgContainer.parentNode.insertBefore(msgList,msgContainer);
+
+  msgSend.addEventListener('click',async()=>{
+    const t=msgInput.value.trim();
+    if(!t){alert('写点什么吧');return;}
+    const m={content:t,created_at:new Date().toISOString()};
+    saveLocalMsg(m);
+    renderMsgs(getLocalMsgs());
+    msgInput.value='';
+    // 尝试同步到Supabase
+    if(sb){
+      try{await sb.from('messages').insert({content:t});}catch(e){}
+    }
+  });
+
+  async function loadMessages(){
+    if(!sb){return;}
     try{
       const {data,error}=await sb.from('messages').select('*').order('created_at',{ascending:false}).limit(50);
-      if(error){loadGiscus();return;}
-      msgList.innerHTML='';
-      data.forEach(m=>{
-        const div=document.createElement('div');
-        div.className='xy-diary-item';
-        div.innerHTML='<div>'+escapeHtml(m.content)+'</div>'+
-          '<div class="meta">'+new Date(m.created_at).toLocaleString()+'</div>';
-        msgList.appendChild(div);
-      });
-    }catch(e){
-      loadGiscus();
-    }
+      if(error)return;
+      if(data&&data.length){
+        renderMsgs(data);
+      }
+    }catch(e){}
   }
 
   function loadGiscus(){
     if(msgContainer.dataset.giscusLoaded) return;
     msgContainer.dataset.giscusLoaded='1';
-    msgList.remove();
     const s=document.createElement('script');
     s.src='https://giscus.app/client.js';
     s.setAttribute('data-repo','user2026402/xiaoliuren');
@@ -12497,6 +12531,8 @@ $('auditModal').addEventListener('click',function(e){
     msgContainer.appendChild(s);
   }
   initSupabase();
+  // Giscus作为补充，在留言列表下方
+  setTimeout(loadGiscus,3000);
 
   // 写给未来的信（localStorage，写给自己的）
   const LKEY='xy_letters';
