@@ -12540,14 +12540,25 @@ $('auditModal').addEventListener('click',function(e){
   msgSend.addEventListener('click',async()=>{
     const t=msgInput.value.trim();
     if(!t){alert('写点什么吧');return;}
+    msgSend.disabled=true;
+    msgSend.textContent='发送中...';
     const m={content:t,created_at:new Date().toISOString()};
     saveLocalMsg(m);
     renderMsgs(getLocalMsgs());
     msgInput.value='';
-    // 尝试同步到Supabase
+    // 同步到Supabase
+    let synced=false;
     if(sb){
-      try{await sb.from('messages').insert({content:t});}catch(e){}
+      try{
+        await sb.from('messages').insert({content:t});
+        synced=true;
+      }catch(e){console.log('留言同步失败:',e);}
     }
+    // 重新拉取云端留言
+    await loadMessages();
+    msgSend.disabled=false;
+    msgSend.textContent=synced?'已发送':'留言（离线）';
+    setTimeout(()=>{msgSend.textContent='留言';},2000);
   });
 
   async function loadMessages(){
