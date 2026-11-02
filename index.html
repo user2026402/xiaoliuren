@@ -1033,7 +1033,29 @@ footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:12.5px;
       <!-- 树洞日记 -->
       <div class="xy-treehole">
         <h3 style="margin:18px 0 10px;font-size:16px;color:#8a6a4a">🌳 树洞日记</h3>
-        <p style="font-size:12px;color:#999;margin-bottom:10px">开心的、难过的、想说没人听的，都写在这里。只有你自己能看到。</p>
+        <p style="font-size:12px;color:#999;margin-bottom:10px">开心的、难过的、想说没人听的，都写在这里。私密日记只有你自己能看到，公开日记所有人都能看见。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <input type="date" id="xyDiaryDate" style="padding:6px 10px;border:1px solid #e0d8c8;border-radius:8px;font-size:13px">
+          <select id="xyDiaryWeather" style="padding:6px 10px;border:1px solid #e0d8c8;border-radius:8px;font-size:13px;background:#fff">
+            <option value="">天气</option>
+            <option value="☀️ 晴天">☀️ 晴天</option>
+            <option value="⛅ 多云">⛅ 多云</option>
+            <option value="🌧️ 下雨">🌧️ 下雨</option>
+            <option value="⛈️ 雷雨">⛈️ 雷雨</option>
+            <option value="❄️ 下雪">❄️ 下雪</option>
+            <option value="🌫️ 雾">🌫️ 雾</option>
+          </select>
+          <select id="xyDiaryMood" style="padding:6px 10px;border:1px solid #e0d8c8;border-radius:8px;font-size:13px;background:#fff">
+            <option value="">心情</option>
+            <option value="😊 开心">😊 开心</option>
+            <option value="😢 难过">😢 难过</option>
+            <option value="😌 平静">😌 平静</option>
+            <option value="😤 生气">😤 生气</option>
+            <option value="🥰 幸福">🥰 幸福</option>
+            <option value="😴 疲惫">😴 疲惫</option>
+            <option value="🤔 迷茫">🤔 迷茫</option>
+          </select>
+        </div>
         <textarea id="xyDiaryInput" placeholder="今天发生了什么？想说点什么？" style="width:100%;min-height:80px;padding:12px;border:1px solid #e0d8c8;border-radius:10px;font-size:14px;resize:vertical;box-sizing:border-box"></textarea>
         <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
           <label style="font-size:13px;color:#666;display:flex;align-items:center;gap:4px">
@@ -12408,44 +12430,73 @@ $('auditModal').addEventListener('click',function(e){
     document.head.appendChild(s);
   }
 
-  // 树洞日记 localStorage（私密）
+  // 树洞日记 localStorage（私密）+ Supabase（公开）
   const KEY='xy_diary';
   const list=document.getElementById('xyDiaryList');
   const input=document.getElementById('xyDiaryInput');
   const pub=document.getElementById('xyPublic');
   const btn=document.getElementById('xyDiaryBtn');
+  const dDate=document.getElementById('xyDiaryDate');
+  const dWeather=document.getElementById('xyDiaryWeather');
+  const dMood=document.getElementById('xyDiaryMood');
 
   function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function renderDiaryItem(d){
+    const div=document.createElement('div');
+    div.className='xy-diary-item';
+    let meta=new Date(d.time||d.created_at).toLocaleString();
+    if(d.diary_date) meta='📅 '+d.diary_date+' · '+meta;
+    if(d.weather) meta=d.weather+' '+meta;
+    if(d.mood) meta=d.mood+' '+meta;
+    div.innerHTML='<div>'+escapeHtml(d.text)+'</div>'+
+      '<div class="meta">'+meta+
+      '<span class="tag '+(d.public?'xy-tag-public':'xy-tag-private')+'">'+(d.public?'公开':'私密')+'</span></div>';
+    return div;
+  }
   function loadDiary(){
     let arr=[];
     try{arr=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){}
     list.innerHTML='';
+    // 先显示公开日记（云端+本地公开）
     arr.slice().reverse().forEach(d=>{
-      const div=document.createElement('div');
-      div.className='xy-diary-item';
-      div.innerHTML=('<div>'+escapeHtml(d.text)+'</div>')+
-        '<div class="meta">'+new Date(d.time).toLocaleString()+
-        '<span class="tag '+(d.public?'xy-tag-public':'xy-tag-private')+'">'+(d.public?'公开':'私密')+'</span></div>';
-      list.appendChild(div);
+      list.appendChild(renderDiaryItem(d));
     });
+    // 加载云端公开日记
+    loadPublicDiaries();
+  }
+  async function loadPublicDiaries(){
+    if(!sb) return;
+    try{
+      const {data}=await sb.from('diaries').select('*').order('created_at',{ascending:false}).limit(30);
+      if(data&&data.length){
+        // 在本地日记前面插入云端公开日记
+        data.forEach(d=>{
+          const div=renderDiaryItem({text:d.content,time:d.created_at,public:true,weather:d.weather,mood:d.mood,diary_date:d.diary_date});
+          list.insertBefore(div,list.firstChild);
+        });
+      }
+    }catch(e){}
   }
   btn.addEventListener('click',async()=>{
     const t=input.value.trim();
     if(!t) return;
+    const entry={text:t,time:Date.now(),public:pub.checked,
+      diary_date:dDate.value||'',weather:dWeather.value||'',mood:dMood.value||''};
     // 私密日记存localStorage
     let arr=[];
     try{arr=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){}
-    arr.push({text:t,time:Date.now(),public:pub.checked});
+    arr.push(entry);
     localStorage.setItem(KEY,JSON.stringify(arr));
-    // 如果选了公开，同步发到Supabase留言板
+    // 如果选了公开，同步发到Supabase
     if(pub.checked && sb){
       try{
-        await sb.from('messages').insert({content:t});
-        loadMessages();
+        await sb.from('diaries').insert({content:t,weather:dWeather.value,mood:dMood.value,diary_date:dDate.value});
+        loadPublicDiaries();
       }catch(e){}
     }
     input.value='';
     pub.checked=false;
+    dDate.value='';dWeather.value='';dMood.value='';
     loadDiary();
   });
   loadDiary();
