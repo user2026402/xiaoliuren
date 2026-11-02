@@ -12410,36 +12410,11 @@ $('auditModal').addEventListener('click',function(e){
   });
 
   // 初始化Supabase（懒加载，只有切到小院tab才加载）
-  let sb=null;
+  const SB_URL='https://bwyinhdquouiqxzzqmzy.supabase.co';
+  const SB_KEY='sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G';
   function initSupabase(){
-    if(window.supabase){
-      try{
-        sb=supabase.createClient('https://bwyinhdquouiqxzzqmzy.supabase.co','sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G');
-      }catch(e){}
-      loadMessages();
-      return;
-    }
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js';
-    s.onload=()=>{
-      try{
-        sb=supabase.createClient('https://bwyinhdquouiqxzzqmzy.supabase.co','sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G');
-      }catch(e){console.log('Supabase init失败:',e);}
-      loadMessages();
-    };
-    s.onerror=()=>{
-      // 备用CDN
-      const s2=document.createElement('script');
-      s2.src='https://unpkg.com/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js';
-      s2.onload=()=>{
-        try{
-          sb=supabase.createClient('https://bwyinhdquouiqxzzqmzy.supabase.co','sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G');
-        }catch(e){}
-        loadMessages();
-      };
-      document.head.appendChild(s2);
-    };
-    document.head.appendChild(s);
+    // 直接用fetch调REST API，不加载SDK
+    loadMessages();
   }
 
   // 树洞日记 localStorage（私密）+ Supabase（公开）
@@ -12558,30 +12533,33 @@ $('auditModal').addEventListener('click',function(e){
     saveLocalMsg(m);
     renderMsgs(getLocalMsgs());
     msgInput.value='';
-    // 同步到Supabase
+    // 直接fetch发云端
     let synced=false;
-    if(sb){
-      try{
-        await sb.from('messages').insert({content:t});
-        synced=true;
-      }catch(e){console.log('留言同步失败:',e);}
-    }
-    // 重新拉取云端留言
+    try{
+      await fetch(SB_URL+'/rest/v1/messages',{
+        method:'POST',
+        headers:{'apikey':SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({content:t})
+      });
+      synced=true;
+    }catch(e){console.log('发送失败:',e);}
     await loadMessages();
     msgSend.disabled=false;
-    msgSend.textContent=synced?'已发送':'留言（离线）';
+    msgSend.textContent=synced?'已发送':'离线发送';
     setTimeout(()=>{msgSend.textContent='留言';},2000);
   });
 
   async function loadMessages(){
-    if(!sb){return;}
     try{
-      const {data,error}=await sb.from('messages').select('*').order('created_at',{ascending:false}).limit(50);
-      if(error)return;
+      const r=await fetch(SB_URL+'/rest/v1/messages?select=*&order=created_at.desc&limit=50',{
+        headers:{'apikey':SB_KEY}
+      });
+      if(!r.ok)return;
+      const data=await r.json();
       if(data&&data.length){
         renderMsgs(data);
       }
-    }catch(e){}
+    }catch(e){console.log('拉取留言失败:',e);}
   }
 
   function loadGiscus(){
