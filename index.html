@@ -12420,12 +12420,24 @@ $('auditModal').addEventListener('click',function(e){
       return;
     }
     const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.38.4/supabase.min.js';
+    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js';
     s.onload=()=>{
       try{
         sb=supabase.createClient('https://bwyinhdquouiqxzzqmzy.supabase.co','sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G');
-      }catch(e){}
+      }catch(e){console.log('Supabase init失败:',e);}
       loadMessages();
+    };
+    s.onerror=()=>{
+      // 备用CDN
+      const s2=document.createElement('script');
+      s2.src='https://unpkg.com/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js';
+      s2.onload=()=>{
+        try{
+          sb=supabase.createClient('https://bwyinhdquouiqxzzqmzy.supabase.co','sb_publishable_kwTFNaGKKD38yUDvmcjPTA_jY0VEw3G');
+        }catch(e){}
+        loadMessages();
+      };
+      document.head.appendChild(s2);
     };
     document.head.appendChild(s);
   }
