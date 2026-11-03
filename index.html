@@ -10142,14 +10142,14 @@ function drawTarot(n){
   return picked;
 }
 // 解牌
+const TAROT_POSITIONS={
+  '1':['指引'],
+  '3':['过去','现在','未来'],
+  '5':['现状','阻碍','建议','结果','环境']
+};
 function readTarot(cards,spread,q){
   let txt='';
-  const positions={
-    '1':['指引'],
-    '3':['过去','现在','未来'],
-    '5':['现状','阻碍','建议','结果','环境']
-  };
-  const posNames=positions[spread]||['指引'];
+  const posNames=TAROT_POSITIONS[spread]||['指引'];
 
   // 第一步：排盘数据
   txt+='📊 排盘数据\n';
@@ -11174,7 +11174,8 @@ $('startBtn').addEventListener('click',async ()=>{
               const txt=readTarot(cards,spread,tq);
               $('vName').textContent=cards.map(c=>c.name+(c.reversed?'(逆)':'')).join(' · ');
               $('rText').innerHTML=txt.replace(/\n/g,'<br>');
-              const cardDesc=cards.map((c,i)=>posNames[i]+'：'+c.name+(c.reversed?'（逆位）':'（正位）')).join('；');
+              const tPos=TAROT_POSITIONS[spread]||['指引'];
+              const cardDesc=cards.map((c,i)=>(tPos[i]||('第'+(i+1)+'张'))+'：'+c.name+(c.reversed?'（逆位）':'（正位）')).join('；');
               appendAIReading('塔罗牌', tq, cardDesc);
               saveQuestion('塔罗：'+tq, cards.map(c=>c.name).join(','));
               window.scrollTo({top:0,behavior:'smooth'});
@@ -12428,6 +12429,8 @@ $('auditModal').addEventListener('click',function(e){
   function initSupabase(){
     // 直接用fetch调REST API，不加载SDK
     loadMessages();
+    // 每 15 秒同步一次，别人新留的言会自动出现（页面隐藏时暂停）
+    setInterval(()=>{ if(!document.hidden) loadMessages(); },15000);
   }
 
   // 树洞日记 localStorage（私密）+ Supabase（公开）
@@ -12494,7 +12497,7 @@ $('auditModal').addEventListener('click',function(e){
         await fetch(SB_URL+'/rest/v1/diaries',{
           method:'POST',
           headers:{'apikey':SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-          body:JSON.stringify({content:t,weather:dWeather.value,mood:dMood.value,diary_date:dDate.value})
+          body:JSON.stringify({content:t,weather:dWeather.value||null,mood:dMood.value||null,diary_date:dDate.value||null})
         });
         loadPublicDiaries();
       }catch(e){}
@@ -12538,6 +12541,27 @@ $('auditModal').addEventListener('click',function(e){
       msgList.appendChild(div);
     });
   }
+  // 云端 + 本地合并：云端在前，本地补上还没同步成功的
+  function mergeMsgs(cloud){
+    const local=getLocalMsgs();
+    const seen={};
+    (cloud||[]).forEach(m=>{seen[(m.content||'').trim()]=1;});
+    const extra=local.filter(m=>!seen[(m.content||'').trim()]);
+    return (cloud||[]).concat(extra).slice(0,50);
+  }
+  // 云端异常时给用户一个明确提示，避免"只看到自己的留言"却不知道原因
+  function setSyncTip(text){
+    if(!msgList.parentNode) return;
+    let tip=document.getElementById('xySyncTip');
+    if(!tip){
+      tip=document.createElement('div');
+      tip.id='xySyncTip';
+      tip.style.cssText='font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 10px;margin-bottom:8px';
+      msgList.parentNode.insertBefore(tip,msgList);
+    }
+    tip.textContent=text||'';
+    tip.hidden=!text;
+  }
   // 先渲染本地留言
   renderMsgs(getLocalMsgs());
   msgContainer.parentNode.insertBefore(msgList,msgContainer);
@@ -12554,17 +12578,18 @@ $('auditModal').addEventListener('click',function(e){
     // 直接fetch发云端
     let synced=false;
     try{
-      await fetch(SB_URL+'/rest/v1/messages',{
+      const r=await fetch(SB_URL+'/rest/v1/messages',{
         method:'POST',
         headers:{'apikey':SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
         body:JSON.stringify({content:t})
       });
-      synced=true;
+      synced=r.ok;
+      if(!r.ok) console.warn('留言写入被拒绝 HTTP', r.status, await r.text());
     }catch(e){console.log('发送失败:',e);}
     await loadMessages();
     msgSend.disabled=false;
-    msgSend.textContent=synced?'已发送':'离线发送';
-    setTimeout(()=>{msgSend.textContent='留言';},2000);
+    msgSend.textContent=synced?'已发送':'发送失败，已存本机';
+    setTimeout(()=>{msgSend.textContent='留言';},2500);
   });
 
   async function loadMessages(){
@@ -12572,12 +12597,19 @@ $('auditModal').addEventListener('click',function(e){
       const r=await fetch(SB_URL+'/rest/v1/messages?select=*&order=created_at.desc&limit=50',{
         headers:{'apikey':SB_KEY}
       });
-      if(!r.ok)return;
-      const data=await r.json();
-      if(data&&data.length){
-        renderMsgs(data);
+      if(!r.ok){
+        console.warn('拉取留言失败 HTTP', r.status);
+        setSyncTip('云端同步失败（HTTP '+r.status+'），当前只显示本机留言');
+        return;
       }
-    }catch(e){console.log('拉取留言失败:',e);}
+      const data=await r.json();
+      if(!Array.isArray(data)) return;
+      setSyncTip('');
+      renderMsgs(mergeMsgs(data));
+    }catch(e){
+      console.log('拉取留言失败:',e);
+      setSyncTip('连不上云端，当前只显示本机留言');
+    }
   }
 
   function loadGiscus(){
