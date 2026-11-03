@@ -10970,11 +10970,27 @@ async function appendAIReading(moduleName, question, paiPanDesc){
   body.textContent='思考中...';
   aiDiv.appendChild(body);
   rText.appendChild(aiDiv);
-  let tid=null;
+
+  // 失败时给一个重试按钮，不必重新抽牌
+  const showRetry=function(text){
+    body.style.color='#c00';
+    body.textContent=text+' ';
+    const btn=document.createElement('button');
+    btn.textContent='重试';
+    btn.style.cssText='border:none;background:#e89bb4;color:#fff;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer';
+    btn.onclick=function(){
+      aiDiv.remove();
+      appendAIReading(moduleName,question,paiPanDesc);
+    };
+    body.appendChild(btn);
+  };
+
+  let tid=null, hint=null;
   try{
     const apiUrl='https://bwyinhdquouiqxzzqmzy.supabase.co/functions/v1/ai-reading';
     const controller=new AbortController();
-    tid=setTimeout(()=>controller.abort(),20000);
+    tid=setTimeout(()=>controller.abort(),45000);
+    hint=setTimeout(()=>{ body.style.color='#999'; body.textContent='AI 还在生成，通常需要 5~20 秒...'; },8000);
     const res=await fetch(apiUrl,{
       method:'POST',
       headers:{
@@ -10999,14 +11015,14 @@ async function appendAIReading(moduleName, question, paiPanDesc){
       body.style.whiteSpace='pre-wrap';
       body.textContent=content;
     }else{
-      body.style.color='#c00';
-      body.textContent='解读失败：'+((data&&(data.error||data.message))||'AI 服务返回格式异常，请稍后重试');
+      showRetry('解读失败：'+((data&&(data.error||data.message))||'AI 服务返回格式异常'));
     }
   }catch(e){
-    body.style.color='#c00';
-    body.textContent=(e&&e.name==='AbortError')?'解读超时，请检查网络后重试':('加载失败：'+((e&&e.message)||'网络异常'));
+    if(e&&e.name==='AbortError') showRetry('解读超时（45 秒无响应）。');
+    else showRetry('加载失败：'+((e&&e.message)||'网络异常'));
   }finally{
     if(tid) clearTimeout(tid);
+    if(hint) clearTimeout(hint);
   }
 }
 
