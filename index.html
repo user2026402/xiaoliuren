@@ -10958,16 +10958,23 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
 // 全局AI解读函数
 async function appendAIReading(moduleName, question, paiPanDesc){
+  const rText=document.getElementById('rText');
+  if(!rText) return;
+  const aiDiv=document.createElement('div');
+  aiDiv.style.cssText='margin-top:16px;padding-top:12px;border-top:1px dashed #ccc;';
+  const head=document.createElement('b');
+  head.textContent='🤖 AI解读：';
+  aiDiv.appendChild(head);
+  const body=document.createElement('div');
+  body.style.cssText='margin-top:6px;color:#999;';
+  body.textContent='思考中...';
+  aiDiv.appendChild(body);
+  rText.appendChild(aiDiv);
+  let tid=null;
   try{
-    const rText=document.getElementById('rText');
-    if(!rText) return;
-    const aiDiv=document.createElement('div');
-    aiDiv.style.cssText='margin-top:16px;padding-top:12px;border-top:1px dashed #ccc;';
-    aiDiv.innerHTML='<b>🤖 AI解读：</b><span style="color:#999"> 思考中...</span>';
-    rText.appendChild(aiDiv);
     const apiUrl='https://bwyinhdquouiqxzzqmzy.supabase.co/functions/v1/ai-reading';
     const controller=new AbortController();
-    const tid=setTimeout(()=>controller.abort(),15000);
+    tid=setTimeout(()=>controller.abort(),20000);
     const res=await fetch(apiUrl,{
       method:'POST',
       headers:{
@@ -10978,18 +10985,28 @@ async function appendAIReading(moduleName, question, paiPanDesc){
       signal:controller.signal,
       body:JSON.stringify({
         messages:[
-          {role:'system',content:'你是资深占卜师，精通'+moduleName+'，说话直接、大白话、不绕弯子。用户问什么就答什么，不要说"牌面只是参考"这种废话。根据卦象给出确定性结论，不要模棱两可。用中文回答，300字以内。'},
-          {role:'user',content:'问题：'+question+'\n卦象排盘：'+paiPanDesc+'\n请结合卦象直接解读这个问题会怎样，给明确结论和具体建议。'}
+          {role:'system',content:'你是资深占卜师，精通'+moduleName+'。用户问什么就答什么，直接给结论（会/不会、成/不成、好/要当心），用大白话说明理由。禁止说"牌面只是参考""保持心态""需要努力"这类套话。按问题类型（感情、事业、学业、财运、健康、出行、人际、其他）给出具体判断和可执行建议。300字以内，不要使用markdown符号。'},
+          {role:'user',content:'问题：'+question+'\n卦象排盘：'+paiPanDesc+'\n请结合卦象直接判断这个问题会怎样，给明确结论和具体建议。'}
         ],
         max_tokens:500,
         temperature:0.7
       })
     });
-    clearTimeout(tid);
     const data=await res.json();
-    aiDiv.innerHTML='<b>🤖 AI解读：</b><br>'+data.choices[0].message.content;
+    const content=data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content;
+    if(content){
+      body.style.color='#333';
+      body.style.whiteSpace='pre-wrap';
+      body.textContent=content;
+    }else{
+      body.style.color='#c00';
+      body.textContent='解读失败：'+((data&&(data.error||data.message))||'AI 服务返回格式异常，请稍后重试');
+    }
   }catch(e){
-    aiDiv.innerHTML='<b>🤖 AI解读：</b><br><span style="color:#c00">加载失败：'+e.message+'</span>';
+    body.style.color='#c00';
+    body.textContent=(e&&e.name==='AbortError')?'解读超时，请检查网络后重试':('加载失败：'+((e&&e.message)||'网络异常'));
+  }finally{
+    if(tid) clearTimeout(tid);
   }
 }
 
@@ -12062,26 +12079,14 @@ wishModal.addEventListener('click',function(e){
   </div>
 </div>
 
-<!-- API设置弹窗 -->
+<!-- AI 助手说明弹窗（旧版本地填 Key 方案已废弃） -->
 <div id="apiModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:400px">
-    <h3 style="margin:0 0 16px 0;font-size:16px">⚙️ AI助手设置</h3>
-    <p style="font-size:12px;color:#666;margin-bottom:12px">填入你的大模型API Key，小羊助手就能真正对话了。Key只存在你本地浏览器里，不会上传。</p>
-    <div style="margin-bottom:12px">
-      <label style="font-size:13px;display:block;margin-bottom:4px">API地址（OpenAI兼容）</label>
-      <input type="text" id="apiUrl" placeholder="https://api.deepseek.com/v1/chat/completions" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box">
-    </div>
-    <div style="margin-bottom:12px">
-      <label style="font-size:13px;display:block;margin-bottom:4px">API Key</label>
-      <input type="password" id="apiKey" placeholder="sk-..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box">
-    </div>
-    <div style="margin-bottom:16px">
-      <label style="font-size:13px;display:block;margin-bottom:4px">模型名</label>
-      <input type="text" id="apiModel" placeholder="deepseek-chat" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box">
-    </div>
+    <h3 style="margin:0 0 16px 0;font-size:16px">⚙️ 关于 AI 助手</h3>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin:0 0 10px">小羊助手已接入云端免费模型（GLM-4-Flash），由服务器代理调用，<b>无需填写任何 Key</b>。</p>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin:0 0 16px">排盘、抽牌、起卦全部由本地代码计算，AI 只负责解读结果。</p>
     <div style="display:flex;gap:8px">
-      <button id="apiSave" style="flex:1;background:#e89bb4;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:14px">保存</button>
-      <button id="apiCancel" style="flex:1;background:#f0f0f0;color:#333;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:14px">取消</button>
+      <button id="apiCancel" style="flex:1;background:#e89bb4;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:14px">知道了</button>
     </div>
   </div>
 </div>
@@ -12093,34 +12098,16 @@ $('aiInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendAiMessage()
 
 // API设置
 $('aiSettings').addEventListener('click',()=>{
-  $('apiModal').style.display='flex';
-  // 读取已存的设置
-  $('apiUrl').value=localStorage.getItem('ai_api_url')||'https://api.deepseek.com/v1/chat/completions';
-  // API Key解码回填
-  const savedKey=localStorage.getItem('ai_api_key');
+  // 旧方案（本地填 Key）已废弃，顺手清掉历史遗留的 Key
   try{
-    $('apiKey').value=savedKey?atob(savedKey):'';
-  }catch(e){
-    $('apiKey').value=savedKey||''; // 兼容旧版明文
-  }
-  $('apiModel').value=localStorage.getItem('ai_api_model')||'deepseek-chat';
+    localStorage.removeItem('ai_api_key');
+    localStorage.removeItem('ai_api_url');
+    localStorage.removeItem('ai_api_model');
+  }catch(e){}
+  $('apiModal').style.display='flex';
 });
 $('apiCancel').addEventListener('click',()=>{
   $('apiModal').style.display='none';
-});
-$('apiSave').addEventListener('click',()=>{
-  localStorage.setItem('ai_api_url', $('apiUrl').value.trim());
-  // API Key做Base64编码存储（不是真加密，防止简单XSS直接窃取明文）
-  const key=$('apiKey').value.trim();
-  localStorage.setItem('ai_api_key', btoa(key));
-  localStorage.setItem('ai_api_model', $('apiModel').value.trim());
-  $('apiModal').style.display='none';
-  const msgs=$('aiMessages');
-  const aiMsg=document.createElement('div');
-  aiMsg.className='ai-chat-msg ai';
-  aiMsg.textContent='咩～设置好啦！现在我可以真正对话了哦～';
-  msgs.appendChild(aiMsg);
-  msgs.scrollTop=msgs.scrollHeight;
 });
 
 async function sendAiMessage(){
@@ -12184,7 +12171,7 @@ async function sendAiMessage(){
       if(e.name==='AbortError'){
         aiMsg.textContent='咩～思考太久了，网络有点慢，再试一次哦～';
       }else{
-        aiMsg.textContent='咩～API调用失败了，检查一下Key对不对哦～';
+        aiMsg.textContent='咩～我这边走神了，过一会儿再问我一次好不好～';
       }
     }
     msgs.scrollTop=msgs.scrollHeight;
@@ -12478,9 +12465,10 @@ $('auditModal').addEventListener('click',function(e){
     loadPublicDiaries();
   }
   async function loadPublicDiaries(){
-    if(!sb) return;
     try{
-      const {data}=await sb.from('diaries').select('*').order('created_at',{ascending:false}).limit(30);
+      const r=await fetch(SB_URL+'/rest/v1/diaries?select=*&order=created_at.desc&limit=30',{headers:{'apikey':SB_KEY}});
+      if(!r.ok) return;
+      const data=await r.json();
       if(data&&data.length){
         // 在本地日记前面插入云端公开日记
         data.forEach(d=>{
@@ -12500,10 +12488,14 @@ $('auditModal').addEventListener('click',function(e){
     try{arr=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){}
     arr.push(entry);
     localStorage.setItem(KEY,JSON.stringify(arr));
-    // 如果选了公开，同步发到Supabase
-    if(pub.checked && sb){
+    // 如果选了公开，同步发到Supabase（fetch 直调 REST，不使用 SDK）
+    if(pub.checked){
       try{
-        await sb.from('diaries').insert({content:t,weather:dWeather.value,mood:dMood.value,diary_date:dDate.value});
+        await fetch(SB_URL+'/rest/v1/diaries',{
+          method:'POST',
+          headers:{'apikey':SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({content:t,weather:dWeather.value,mood:dMood.value,diary_date:dDate.value})
+        });
         loadPublicDiaries();
       }catch(e){}
     }
