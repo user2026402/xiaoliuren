@@ -10989,7 +10989,35 @@ function getAICfg(){
   }
 }
 
-async function appendAIReading(moduleName, question, paiPanDesc){
+function stripHtml(s){return (s||'').replace(/<[^>]+>/g,'').replace(/\n{2,}/g,'\n').trim()}
+
+// 小六壬三宫五行生克
+function wxOf(pIdx){return ((PALMS[pIdx]&&PALMS[pIdx].five)||'').replace('属','')||'土'}
+function shengKe(a,b){
+  const S={'木':'火','火':'土','土':'金','金':'水','水':'木'};
+  const K={'木':'土','土':'水','水':'火','火':'金','金':'木'};
+  if(a===b) return a+'与'+b+'比和';
+  if(S[a]===b) return a+'生'+b+'（相生，顺）';
+  if(K[a]===b) return a+'克'+b+'（相克，阻）';
+  if(S[b]===a) return b+'生'+a+'（相生，顺）';
+  if(K[b]===a) return b+'克'+a+'（相克，阻）';
+  return a+'与'+b+'比和';
+}
+
+// 阶段B：卦例历史（跨模块综合印证）
+function getDivHistory(){
+  try{ return JSON.parse(localStorage.getItem('divination_history')||'[]'); }catch(e){ return []; }
+}
+function saveDivHistory(m,q,r){
+  try{
+    const list=getDivHistory();
+    list.push({t:Date.now(),m:m,q:q,r:r});
+    localStorage.setItem('divination_history',JSON.stringify(list.slice(-30)));
+  }catch(e){}
+}
+
+async function appendAIReading(moduleName, question, paiPanDesc, opts){
+  opts=opts||{};
   const rText=document.getElementById('rText');
   if(!rText) return;
   const aiDiv=document.createElement('div');
@@ -11012,7 +11040,7 @@ async function appendAIReading(moduleName, question, paiPanDesc){
     btn.style.cssText='border:none;background:#e89bb4;color:#fff;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer';
     btn.onclick=function(){
       aiDiv.remove();
-      appendAIReading(moduleName,question,paiPanDesc);
+      appendAIReading(moduleName,question,paiPanDesc,opts);
     };
     body.appendChild(btn);
   };
@@ -11034,10 +11062,10 @@ async function appendAIReading(moduleName, question, paiPanDesc){
       body:JSON.stringify({
         model:cfg.model,
         messages:[
-          {role:'system',content:'你是资深占卜师，精通'+moduleName+'。用户问什么就答什么，直接给结论（会/不会、成/不成、好/要当心），用大白话说明理由。禁止说"牌面只是参考""保持心态""需要努力"这类套话。按问题类型（感情、事业、学业、财运、健康、出行、人际、其他）给出具体判断和可执行建议。300字以内，不要使用markdown符号。'},
-          {role:'user',content:'问题：'+question+'\n卦象排盘：'+paiPanDesc+'\n请结合卦象直接判断这个问题会怎样，给明确结论和具体建议。'}
+          {role:'system',content:'你是资深占卜师，精通'+moduleName+'，熟读《增删卜易》《奇门遁甲统宗》等典籍，解卦严谨理性，不神化、不玄虚。输出固定四段结构：一、总判——第一句话就给确定性结论（会/不会、成/不成、多久、什么走向），必须明确，禁止"可能""也许""大概率"这类含糊词；二、为什么——把排盘结构里点名各要素串成一条因果链：哪个要素与哪个要素冲突或相助、如何一步步导致总判的结果，要素必须点名引用（如动爻、本卦变卦、牌位、三宫生克、行星星座宫位），不许空泛；三、什么时候——给出具体时间节点（天数、周数、季节或月份）或触发条件，并说明依据；四、怎么做——给两到三条结合用户问题的具体动作建议。硬性禁止：逐条罗列符号含义、说"牌面只是参考""保持心态""需要努力""跟着感觉走"等套话、用含糊词回避核心结论。全文600~800字，连贯成文，不要使用markdown符号。'},
+          {role:'user',content:'用户的问题：'+question+'\n\n排盘结构数据：\n'+paiPanDesc+'\n\n本地基础解读（素材，供提炼与深化，不要照抄）：\n'+(opts.localReading||'（无）')+'\n\n请按系统要求输出四段式综合解读。'}
         ],
-        max_tokens:500,
+        max_tokens:1600,
         temperature:0.7
       })
     });
@@ -11047,6 +11075,53 @@ async function appendAIReading(moduleName, question, paiPanDesc){
       body.style.color='#333';
       body.style.whiteSpace='pre-wrap';
       body.textContent=content;
+      // 阶段B：存档 + 跨卦综合印证按钮
+      try{
+        saveDivHistory(moduleName,question,content);
+        const recent=getDivHistory().filter(x=>Date.now()-x.t<3*24*3600*1000);
+        if(recent.length>=2){
+          const cmpBtn=document.createElement('button');
+          cmpBtn.textContent='🔀 跨卦综合印证（近3天已有 '+recent.length+' 条卦例）';
+          cmpBtn.style.cssText='margin-top:8px;border:none;background:#7aa7c7;color:#fff;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer';
+          cmpBtn.onclick=async function(){
+            if(cmpBtn.disabled) return;
+            cmpBtn.disabled=true; cmpBtn.textContent='综合比对中...';
+            const cmpDiv=document.createElement('div');
+            cmpDiv.style.cssText='margin-top:8px;color:#666;white-space:pre-wrap';
+            cmpDiv.textContent='综合比对中...';
+            aiDiv.appendChild(cmpDiv);
+            let tid2=null;
+            try{
+              const cfg2=getAICfg();
+              if(!cfg2.key) throw new Error('未配置 AI 密钥');
+              const listTxt=recent.map((x,i)=>'【卦例'+(i+1)+'】'+new Date(x.t).toLocaleString()+' · '+x.m+'\n问题：'+x.q+'\n解读：'+x.r).join('\n\n');
+              const ctrl2=new AbortController();
+              tid2=setTimeout(()=>ctrl2.abort(),30000);
+              const res2=await fetch(cfg2.apiUrl,{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg2.key},
+                signal:ctrl2.signal,
+                body:JSON.stringify({model:cfg2.model,messages:[
+                  {role:'system',content:'你是资深占卜督导。用户对同一或相近问题在短时间内起过多卦（可能来自不同流派：小六壬、六爻、奇门遁甲、塔罗牌、占星骰子）。请交叉印证输出五部分：一、各卦结论速览（一行一卦，点名卦名/牌名/落宫）；二、一致点：哪些结论相互印证；三、矛盾点：哪些结论冲突（若无写"无重大矛盾"）；四、取舍：矛盾时以哪卦为准并说明理由（通常以卦象细节更具体、要素更丰富者为准，时间上以更晚的卦为辅）；五、综合结论：一句话确定性结论+时间节点+一条核心建议。全文400~600字，大白话，不使用markdown符号。'},
+                  {role:'user',content:'用户最近的问题：'+question+'\n\n各卦例：\n'+listTxt+'\n\n请做交叉印证。'}
+                ],max_tokens:1200,temperature:0.5})
+              });
+              clearTimeout(tid2); tid2=null;
+              const d2=await res2.json();
+              const c2=d2&&d2.choices&&d2.choices[0]&&d2.choices[0].message&&d2.choices[0].message.content;
+              cmpDiv.style.color='#333';
+              cmpDiv.textContent=c2||('综合失败：'+((d2&&(d2.error||d2.message))||'返回异常'));
+              cmpBtn.style.display='none';
+            }catch(err){
+              if(tid2) clearTimeout(tid2);
+              cmpDiv.style.color='#c00';
+              cmpDiv.textContent=(err&&err.name==='AbortError'?'综合超时（30秒）。':'综合失败：'+((err&&err.message)||'网络异常'));
+              cmpBtn.disabled=false; cmpBtn.textContent='重试综合印证';
+            }
+          };
+          aiDiv.appendChild(cmpBtn);
+        }
+      }catch(e){}
     }else{
       showRetry('解读失败：'+((data&&(data.error||data.message))||'AI 服务返回格式异常'));
     }
@@ -11114,7 +11189,11 @@ $('startBtn').addEventListener('click',async ()=>{
     // 解卦
     const txt=readLiuYao(lyResult,lq);
     $('rText').innerHTML=txt.replace(/\n/g,'<br>');
-    appendAIReading('六爻', lq, '本卦：'+lyResult.benGua+'，变卦：'+lyResult.bianGua+'，吉凶：'+lyResult.grade);
+    const yaoNames={6:'老阴（动）',7:'少阳',8:'少阴',9:'老阳（动）'};
+    const shangGuaName=BAGUA[lyResult.benYaoes.slice(3,6).join('')].name;
+    const xiaGuaName=BAGUA[lyResult.benYaoes.slice(0,3).join('')].name;
+    const lyDesc='起卦方式：'+(selfMode==='self'?'自报数起卦':'硬币摇卦')+'。\n六爻自下而上（初爻至上爻）：'+yaoes.map((y,i)=>'第'+(i+1)+'爻'+yaoNames[y]).join('、')+'。\n本卦：'+lyResult.benGua+'（上卦'+shangGuaName+'、下卦'+xiaGuaName+'）；变卦：'+lyResult.bianGua+'；动爻：'+(lyResult.dong.length?('第'+lyResult.dong.join('、')+'爻，主事有变，以此爻为枢纽'):'无动爻，主事态平稳，以本卦大势直断')+'；卦象总评：'+lyResult.grade+'。\n请以动爻为线索、以本卦到变卦的演变为因果链来解读。';
+    appendAIReading('六爻', lq, lyDesc, {localReading: txt});
     saveQuestion('六爻：'+lq, lyResult.benGua);
     window.scrollTo({top:0,behavior:'smooth'});
     return;
@@ -11144,7 +11223,8 @@ $('startBtn').addEventListener('click',async ()=>{
     // 解局
     const txt=readQiMen(qmResult,qq);
     $('rText').innerHTML=txt.replace(/\n/g,'<br>');
-    appendAIReading('奇门遁甲', qq, '局名：'+qmResult.juName+'，吉凶：'+qmResult.grade);
+    const qmDesc='局名：'+qmResult.juName+'（'+(qmResult.juName.indexOf('阳')===0?'阳遁，星仪顺行，主推进':'阴遁，星仪逆行，主蓄收')+'）；吉凶总评：'+qmResult.grade+'。\n奇门以时空为纲：阳遁利进取、阴遁利休整，吉局宜速动、凶局宜守缓。请结合阴阳遁与吉凶，就该问题给出该进该守、何时动、往何方向的具体判断。';
+    appendAIReading('奇门遁甲', qq, qmDesc, {localReading: txt});
     saveQuestion('奇门：'+qq, qmResult.juName);
     window.scrollTo({top:0,behavior:'smooth'});
     return;
@@ -11224,8 +11304,8 @@ $('startBtn').addEventListener('click',async ()=>{
               $('vName').textContent=cards.map(c=>c.name+(c.reversed?'(逆)':'')).join(' · ');
               $('rText').innerHTML=txt.replace(/\n/g,'<br>');
               const tPos=TAROT_POSITIONS[spread]||['指引'];
-              const cardDesc=cards.map((c,i)=>(tPos[i]||('第'+(i+1)+'张'))+'：'+c.name+(c.reversed?'（逆位）':'（正位）')).join('；');
-              appendAIReading('塔罗牌', tq, cardDesc);
+              const cardDesc='牌阵：'+tPos.join('、')+'（共'+cards.length+'张）。\n各牌：\n'+cards.map((c,i)=>'· '+(tPos[i]||('第'+(i+1)+'张'))+'位：'+c.name+(c.reversed?'（逆位，能量受阻或过度）':'（正位）')+'，'+(c.suit||'大阿卡纳')+'，核心含义：'+c.mean.split('——')[0]).join('\n')+'\n牌间关系：'+(tPos.length>2?('按「'+tPos.join('→')+'」的顺序递进读，前一位是后一位的因，后一位是前一位的果，必须把牌与牌的因果/递进关系讲出来，不许各说各的。'):'单张直读。');
+              appendAIReading('塔罗牌', tq, cardDesc, {localReading: txt});
               saveQuestion('塔罗：'+tq, cards.map(c=>c.name).join(','));
               window.scrollTo({top:0,behavior:'smooth'});
             },500);
@@ -11265,7 +11345,10 @@ $('startBtn').addEventListener('click',async ()=>{
     // 显示解读
     const txt=diceRead(result,dq);
     $('rText').innerHTML=txt.replace(/\n/g,'<br>');
-    appendAIReading('占星骰子', dq, '行星：'+result.planet.name+'，星座：'+result.sign.name+'，宫位：'+result.house.num+'宫');
+    const pPosMap={'太阳':'正面吉','金星':'正面吉','木星':'正面吉','水星':'中性偏正面','月亮':'中性','火星':'中性偏负面','土星':'负面','天王星':'中性','海王星':'中性偏负面','冥王星':'负面'};
+    const sEleMap={白羊:'火象·行动',狮子:'火象·行动',射手:'火象·行动',巨蟹:'水象·情感',天蝎:'水象·情感',双鱼:'水象·情感',双子:'风象·沟通',天秤:'风象·沟通',水瓶:'风象·沟通',金牛:'土象·现实',处女:'土象·现实',摩羯:'土象·现实'};
+    const diceDesc='三骰定象：\n· 行星骰「'+result.planet.name+'」——问题主轴与驱动力，倾向：'+(pPosMap[result.planet.name]||'中性')+'；'+result.planet.mean+'。\n· 星座骰「'+result.sign.name+'」——事情展开的方式与气质：'+(sEleMap[result.sign.name]||'')+'；'+result.sign.mean+'。\n· 宫位骰「第'+result.house.num+'宫」——事情落在哪个生活领域：'+result.house.mean+'。\n三骰关系：以「'+result.planet.name+'」的能量为动机，用「'+result.sign.name+'」的方式行动，作用于「第'+result.house.num+'宫」所主的生活领域。请据此链条推断走向。';
+    appendAIReading('占星骰子', dq, diceDesc, {localReading: txt});
     saveQuestion('骰子：'+dq, result.planet.name+'+'+result.sign.name+'+'+result.house.num+'宫');
     window.scrollTo({top:0,behavior:'smooth'});
     return;
@@ -11334,7 +11417,8 @@ $('startBtn').addEventListener('click',async ()=>{
   $('rTag').textContent='所问 · '+qType;
   const pRead=personalRead(palm,qText);
   $('rText').innerHTML=pRead+'<br><br><span class="strong">卦象参考：</span>'+palm.read[category].replace(/[；。]/g,m=>m+'<br>');
-  appendAIReading('小六壬', qText, '落宫：'+palm.name+'，五行：'+palm.five+'，方位：'+palm.dir+'，吉凶：'+palm.grade);
+  const xlDesc='三宫推演：\n· 初宫（事之起）：落「'+ORDER[p1]+'」（'+wxOf(p1)+'），初数 '+nums[0]+'。\n· 中宫（事之过程）：落「'+ORDER[p2]+'」（'+wxOf(p2)+'），中数 '+nums[1]+'。\n· 末宫（事之结果）：落「'+ORDER[final]+'」（'+wxOf(final)+'），末数 '+nums[2]+'。\n· 宫位生克：初宫对中宫——'+shengKe(wxOf(p1),wxOf(p2))+'；中宫对末宫——'+shengKe(wxOf(p2),wxOf(final))+'；初宫对末宫——'+shengKe(wxOf(p1),wxOf(final))+'。\n结果宫信息：'+palm.name+'，'+palm.five+'，'+palm.dir+'，'+palm.branch+'，神煞：'+palm.god+'，吉凶：'+palm.grade+'。\n卦诀：'+palm.verse+'\n本卦要旨：'+palm.brief+'\n请务必结合三宫生克链条，说明事情如何起、如何发展、结果如何。';
+  appendAIReading('小六壬', qText, xlDesc, {localReading: stripHtml(pRead)+'\n卦象参考：'+stripHtml(palm.read[category])+'\n建议：'+palm.advice});
   $('rAdvice').textContent=palm.advice;
   $('reading').hidden=false;
 
